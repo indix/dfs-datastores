@@ -40,10 +40,11 @@ object DfsDatastoresBuild extends Build {
 
     publishTo <<= version {
       (v: String) =>
-        if (v.trim.endsWith("SNAPSHOT"))
-          Some("Indix Snapshot Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-snapshot-local")
-        else
-          Some("Indix Release Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-release-local")
+//        if (v.trim.endsWith("SNAPSHOT"))
+//          Some("Indix Snapshot Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-snapshot-local")
+          Some(Resolver.file("file", new File( Path.userHome.absolutePath + "/.m2/repository" )))
+//        else
+//          Some("Indix Release Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-release-local")
     },
 
     //publishTo := Some(Resolver.file("file",  new File( Path.userHome.absolutePath + "/mvn_repo/repository/releases" )) ),
