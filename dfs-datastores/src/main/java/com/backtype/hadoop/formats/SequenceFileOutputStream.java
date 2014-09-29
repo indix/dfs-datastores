@@ -39,6 +39,6 @@ public class SequenceFileOutputStream implements RecordOutputStream {
 
     @Override
     public void flush() throws IOException {
-        _writer.hflush();
+        _writer.syncFs();
     }
 }

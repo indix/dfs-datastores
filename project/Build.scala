@@ -23,7 +23,8 @@ object DfsDatastoresBuild extends Build {
       "Clojars" at "http://clojars.org/repo",
       "Concurrent Maven Repo" at "http://conjars.org/repo",
       "Twttr Maven Repo"  at "http://maven.twttr.com/",
-      "Cloudera Repo"  at "https://repository.cloudera.com/artifactory/cloudera-repos"
+      "Cloudera Repo"  at "https://repository.cloudera.com/artifactory/cloudera-repos",
+      "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
     ),
 
     parallelExecution in Test := false,
@@ -99,11 +100,13 @@ object DfsDatastoresBuild extends Build {
       "org.slf4j" % "slf4j-api" % "1.6.6",
       "jvyaml" % "jvyaml" % "1.0.0",
       "com.google.guava" % "guava" % "13.0",
-      "org.apache.hadoop" % "hadoop-core" % "2.0.0-mr1-cdh4.2.1",
-      "org.apache.hadoop" % "hadoop-client" % "2.0.0-mr1-cdh4.2.1",
-      "org.apache.hadoop" % "hadoop-common" % "2.0.0-cdh4.2.1",
-      "org.apache.hadoop" % "hadoop-hdfs" % "2.0.0-cdh4.2.1",
+      "org.apache.hadoop" % "hadoop-core" % "0.20.1-dev",
+//      "org.apache.hadoop" % "hadoop-core" % "2.0.0-mr1-cdh4.2.1",
+//      "org.apache.hadoop" % "hadoop-client" % "2.0.0-mr1-cdh4.2.1",
+//      "org.apache.hadoop" % "hadoop-common" % "2.0.0-cdh4.2.1",
+//      "org.apache.hadoop" % "hadoop-hdfs" % "2.0.0-cdh4.2.1",
       //"org.apache.hadoop" % "hadoop-mapreduce" % "2.0.0-cdh4.2.1",
+      "commons-logging" % "commons-logging" % "1.1.3",
       "com.hadoop.gplcompression" % "hadoop-lzo" % "0.4.15"
     ).map(_.exclude("commons-daemon", "commons-daemon"))
   )

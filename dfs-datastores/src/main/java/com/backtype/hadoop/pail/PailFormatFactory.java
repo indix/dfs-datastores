@@ -35,7 +35,7 @@ public class PailFormatFactory {
         Map<String, Object> args = spec.getArgs();
         if(args==null) args = new HashMap<String, Object>();
         if(format.equals(SEQUENCE_FILE)) {
-            return new SequenceFileFormat(args);
+            return new PailSequenceFileFormat(args);
         } else {
             try {
                 return (PailFormat) Class.forName(format).newInstance();

@@ -81,7 +81,7 @@ public class SequenceFileFormat implements PailFormat {
     }
 
     public Class<? extends InputFormat> getInputFormatClass() {
-        return SequenceFilePailInputFormat.class;
+        return PailSequenceFileFormat.PailSequenceFileInputFormat.class;
     }
 
 
