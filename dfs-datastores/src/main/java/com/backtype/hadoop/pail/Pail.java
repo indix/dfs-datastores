@@ -5,9 +5,9 @@ import com.backtype.hadoop.formats.RecordInputStream;
 import com.backtype.hadoop.formats.RecordOutputStream;
 import com.backtype.support.IOBufferMap;
 import com.backtype.support.Utils;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.*;
+import org.apache.hadoop.mapred.InputPathProcessor;
+import org.apache.hadoop.mapred.JobConf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -556,8 +556,11 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
         return _fs.mkdirs(path);
     }
 
-    @Override
-    protected FileStatus[] listStatus(Path path) throws IOException {
+//    @Override
+    /*
+        This was the default impl. of Pail, but since we are doing this only for S3, we are not using this for now with qubole :-/
+     */
+    protected FileStatus[] listStatusThatShouldNotBeCalled(Path path) throws IOException {
         FileStatus[] arr =  _fs.listStatus(path);
         List<FileStatus> ret = new ArrayList<FileStatus>();
         for(FileStatus fs: arr) {
@@ -566,6 +569,30 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
             }
         }
         return ret.toArray(new FileStatus[ret.size()]);
+    }
+
+    @Override
+    protected FileStatus[] listStatus(Path path) throws IOException {
+        List<Path> inputPaths = new ArrayList<Path>();
+        inputPaths.add(path);
+
+        LOG.info("Input paths to process:" + inputPaths.size());
+        // creates a MultiPathFilter with the hiddenFileFilter and the
+        // user provided one (if any).
+        List<PathFilter> filters = new ArrayList<PathFilter>();
+        filters.add(MultiPathFilter.getHiddenFileFilter());
+        final PathFilter inputFilter = new MultiPathFilter(filters);
+
+        JobConf job = new JobConf();
+        InputPathProcessor ipp = new InputPathProcessor(job, inputFilter, inputPaths);
+        LOG.info("InputPathProcessor initialized");
+        long t1 = System.nanoTime();
+        ipp.compute();
+        LOG.info("computeLocatedFileStatus took " + (System.nanoTime() - t1) / Math.pow(10, 9));
+        List<LocatedFileStatus> result = ipp.getLocatedFileStatus();
+        LOG.info("Total result paths to process : " + result.size());
+
+        return result.toArray(new LocatedFileStatus[result.size()]);
     }
 
     protected String toFullPath(String relpath) {
