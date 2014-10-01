@@ -152,7 +152,8 @@ public abstract class AbstractPail {
         delete(toStoredPath(userfilename), false);
     }
 
-    public List<Path> getStoredFiles() throws IOException {
+    // original version of getStoredFiles
+    public List<Path> getStoredFilesthatshouldnotbecalled() throws IOException {
         List<String> userfiles = getUserFileNames();
         List<Path> ret = new ArrayList<Path>();
         for(String u: userfiles) {
@@ -161,6 +162,18 @@ public abstract class AbstractPail {
         return ret;
     }
 
+    // Rajat's version of getStoredFiles
+    public List<Path> getStoredFiles() throws IOException {
+    	List<String> userfiles = new ArrayList<String>();
+    	List<String> extensions = new ArrayList<String>();
+    	extensions.add(EXTENSION);
+    	getFiles(new Path(_instance_root), extensions, true, userfiles);
+    	List<Path> ret = new ArrayList<Path>();
+    	for(String u: userfiles) {
+      	    ret.add(toStoredPath(u));
+    	}
+    	return ret;
+    }
 
     public List<String> getMetadataFileNames() throws IOException {
         List<String> ret = new ArrayList<String>();
@@ -177,7 +190,8 @@ public abstract class AbstractPail {
         return ret;
     }
 
-    public List<Path> getStoredFilesAndMetadata() throws IOException {
+    // Original version of getStoredFilesAndMetadata
+    public List<Path> getStoredFilesAndMetadatathatshouldnotbecalled() throws IOException {
         List<String> relFiles = new ArrayList<String>();
         List<String> extensions = new ArrayList<String>();
         extensions.add(META_EXTENSION);
@@ -190,6 +204,41 @@ public abstract class AbstractPail {
         return ret;
     }
 
+    // Rajat's version of getStoredFilesAndMetadata
+    public List<Path> getStoredFilesAndMetadata() throws IOException {
+    	List<String> relFiles = new ArrayList<String>();
+    	List<String> extensions = new ArrayList<String>();
+    	extensions.add(META_EXTENSION);
+    	extensions.add(EXTENSION);
+    	getFiles(new Path(_instance_root), extensions, false, relFiles);
+    	List<Path> ret = new ArrayList<Path>();
+    	for(String rel: relFiles) {
+      	     ret.add(new Path(_instance_root, rel));
+    	}
+  	return ret;
+    }
+
+    private void getFiles(Path abs, List<String> extensions, boolean stripExtension, List<String> files) throws IOException {
+        FileStatus[] contents = listStatus(abs);
+        for(FileStatus stat: contents) {
+            Path p = stat.getPath();
+            if(!stat.isDir()) {
+                String filename = p.getName();
+                for(String extension: extensions) {
+                    if(filename.endsWith(extension) && stat.getLen()>0) {
+                        String toAdd;
+                        if(stripExtension) {
+                            toAdd = Utils.stripExtension(filename, extension);
+                        } else {
+                            toAdd = filename;
+                        }
+                        files.add(toAdd);
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     public List<Path> getStoredUnfinishedFiles() throws IOException {
         List<String> userfiles = new ArrayList<String>();
