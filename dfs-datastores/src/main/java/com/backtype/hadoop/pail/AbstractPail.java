@@ -227,9 +227,7 @@ public abstract class AbstractPail {
         FileStatus[] contents = listStatus(abs);
         for(FileStatus stat: contents) {
             Path p = stat.getPath();
-            //LOG.info("Considering " + p.toString());
             if(!stat.isDir()) {
-                //LOG.info("Is a file: " + p.toString());
                 String filename = p.getName();
                 for(String extension: extensions) {
                     if(filename.endsWith(extension) && stat.getLen()>0) {
@@ -239,7 +237,6 @@ public abstract class AbstractPail {
                         } else {
                             toAdd = filename;
                         }
-                        //LOG.info("Added " + toAdd);
                         files.add(toAdd);
                         break;
                     }
