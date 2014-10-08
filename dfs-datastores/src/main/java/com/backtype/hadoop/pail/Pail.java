@@ -584,6 +584,9 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
         final PathFilter inputFilter = new MultiPathFilter(filters);
 
         JobConf job = new JobConf();
+        //Turning on optimization
+        job.setInt("fs.s3.inputpathprocessor.minsize", 0);
+        LOG.info("S3 optimization turned ON");
         InputPathProcessor ipp = new InputPathProcessor(job, inputFilter, inputPaths);
         LOG.info("InputPathProcessor initialized");
         long t1 = System.nanoTime();

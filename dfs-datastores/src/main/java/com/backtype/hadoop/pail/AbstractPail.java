@@ -6,6 +6,9 @@ import com.backtype.support.Utils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +19,7 @@ public abstract class AbstractPail {
     public static final String META_EXTENSION = ".metafile";
     public static final String META_TEMP_EXTENSION = ".metafiletmp";
     private static final String TEMP_EXTENSION = ".pailfiletmp";
+    public static Logger LOG = LoggerFactory.getLogger(AbstractPail.class);
 
     private class PailOutputStream implements RecordOutputStream {
 
@@ -219,10 +223,13 @@ public abstract class AbstractPail {
     }
 
     private void getFiles(Path abs, List<String> extensions, boolean stripExtension, List<String> files) throws IOException {
+        LOG.info("Root path is " + abs.toString());
         FileStatus[] contents = listStatus(abs);
         for(FileStatus stat: contents) {
             Path p = stat.getPath();
+            LOG.info("Considering " + p.toString());
             if(!stat.isDir()) {
+                LOG.info("Is a file: " + p.toString());
                 String filename = p.getName();
                 for(String extension: extensions) {
                     if(filename.endsWith(extension) && stat.getLen()>0) {
@@ -232,6 +239,7 @@ public abstract class AbstractPail {
                         } else {
                             toAdd = filename;
                         }
+                        LOG.info("Added " + toAdd);
                         files.add(toAdd);
                         break;
                     }
