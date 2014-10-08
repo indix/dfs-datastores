@@ -1,2 +1,2 @@
 
-version in ThisBuild := "1.3.17-qubole-s3-patch-1"
+version in ThisBuild := "1.3.17-qubole-s3-patch-2"
