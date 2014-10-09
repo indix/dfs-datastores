@@ -225,12 +225,18 @@ public abstract class AbstractPail {
     private void getFiles(Path abs, List<String> extensions, boolean stripExtension, List<String> files) throws IOException {
         LOG.info("Root path is " + abs.toString());
         FileStatus[] contents = listStatus(abs);
+        LOG.info(String.format("contents size = %d", contents.length));
+        LOG.info(String.format("START files size = %d", files.size());
+        int num_files = 0;
+        int added = 0;
         for(FileStatus stat: contents) {
             Path p = stat.getPath();
             if(!stat.isDir()) {
+                num_files++;
                 String filename = p.getName();
                 for(String extension: extensions) {
                     if(filename.endsWith(extension) && stat.getLen()>0) {
+                        added++;
                         String toAdd;
                         if(stripExtension) {
                             toAdd = Utils.stripExtension(filename, extension);
@@ -243,6 +249,8 @@ public abstract class AbstractPail {
                 }
             }
         }
+        LOG.info(String.format("END files size = %d",files.size()));
+        LOG.info(String.format("Stats - num files = %d, added = %d", num_files, added));
     }
 
     public List<Path> getStoredUnfinishedFiles() throws IOException {
