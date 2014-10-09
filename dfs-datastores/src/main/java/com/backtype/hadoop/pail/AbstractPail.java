@@ -226,7 +226,7 @@ public abstract class AbstractPail {
         LOG.info("Root path is " + abs.toString());
         FileStatus[] contents = listStatus(abs);
         LOG.info(String.format("contents size = %d", contents.length));
-        LOG.info(String.format("START files size = %d", files.size());
+        LOG.info(String.format("START files size = %d", files.size()));
         int num_files = 0;
         int added = 0;
         for(FileStatus stat: contents) {
