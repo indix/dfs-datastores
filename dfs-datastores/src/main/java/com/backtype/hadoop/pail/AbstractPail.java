@@ -168,15 +168,11 @@ public abstract class AbstractPail {
 
     // Rajat's version of getStoredFiles
     public List<Path> getStoredFiles() throws IOException {
-    	List<String> userfiles = new ArrayList<String>();
+    	List<Path> userfiles = new ArrayList<Path>();
     	List<String> extensions = new ArrayList<String>();
     	extensions.add(EXTENSION);
-    	getFiles(new Path(_instance_root), extensions, true, userfiles);
-    	List<Path> ret = new ArrayList<Path>();
-    	for(String u: userfiles) {
-      	    ret.add(toStoredPath(u));
-    	}
-    	return ret;
+    	getFiles(new Path(_instance_root), extensions, false, userfiles);
+        return userfiles;
     }
 
     public List<String> getMetadataFileNames() throws IOException {
@@ -210,19 +206,15 @@ public abstract class AbstractPail {
 
     // Rajat's version of getStoredFilesAndMetadata
     public List<Path> getStoredFilesAndMetadata() throws IOException {
-    	List<String> relFiles = new ArrayList<String>();
+    	List<Path> relFiles = new ArrayList<Path>();
     	List<String> extensions = new ArrayList<String>();
     	extensions.add(META_EXTENSION);
     	extensions.add(EXTENSION);
     	getFiles(new Path(_instance_root), extensions, false, relFiles);
-    	List<Path> ret = new ArrayList<Path>();
-    	for(String rel: relFiles) {
-      	     ret.add(new Path(_instance_root, rel));
-    	}
-  	return ret;
+        return relFiles;
     }
 
-    private void getFiles(Path abs, List<String> extensions, boolean stripExtension, List<String> files) throws IOException {
+    private void getFiles(Path abs, List<String> extensions, boolean stripExtension, List<Path> files) throws IOException {
         LOG.info("Root path is " + abs.toString());
         FileStatus[] contents = listStatus(abs);
         LOG.info(String.format("contents size = %d", contents.length));
@@ -243,7 +235,7 @@ public abstract class AbstractPail {
                         } else {
                             toAdd = filename;
                         }
-                        files.add(toAdd);
+                        files.add(p);
                         break;
                     }
                 }
