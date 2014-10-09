@@ -6,6 +6,9 @@ import com.backtype.support.Utils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +19,7 @@ public abstract class AbstractPail {
     public static final String META_EXTENSION = ".metafile";
     public static final String META_TEMP_EXTENSION = ".metafiletmp";
     private static final String TEMP_EXTENSION = ".pailfiletmp";
+    public static Logger LOG = LoggerFactory.getLogger(AbstractPail.class);
 
     private class PailOutputStream implements RecordOutputStream {
 
@@ -164,15 +168,11 @@ public abstract class AbstractPail {
 
     // Rajat's version of getStoredFiles
     public List<Path> getStoredFiles() throws IOException {
-    	List<String> userfiles = new ArrayList<String>();
+    	List<Path> userfiles = new ArrayList<Path>();
     	List<String> extensions = new ArrayList<String>();
     	extensions.add(EXTENSION);
-    	getFiles(new Path(_instance_root), extensions, true, userfiles);
-    	List<Path> ret = new ArrayList<Path>();
-    	for(String u: userfiles) {
-      	    ret.add(toStoredPath(u));
-    	}
-    	return ret;
+    	getFiles(new Path(_instance_root), extensions, false, userfiles);
+        return userfiles;
     }
 
     public List<String> getMetadataFileNames() throws IOException {
@@ -206,38 +206,43 @@ public abstract class AbstractPail {
 
     // Rajat's version of getStoredFilesAndMetadata
     public List<Path> getStoredFilesAndMetadata() throws IOException {
-    	List<String> relFiles = new ArrayList<String>();
+    	List<Path> relFiles = new ArrayList<Path>();
     	List<String> extensions = new ArrayList<String>();
     	extensions.add(META_EXTENSION);
     	extensions.add(EXTENSION);
     	getFiles(new Path(_instance_root), extensions, false, relFiles);
-    	List<Path> ret = new ArrayList<Path>();
-    	for(String rel: relFiles) {
-      	     ret.add(new Path(_instance_root, rel));
-    	}
-  	return ret;
+        return relFiles;
     }
 
-    private void getFiles(Path abs, List<String> extensions, boolean stripExtension, List<String> files) throws IOException {
+    private void getFiles(Path abs, List<String> extensions, boolean stripExtension, List<Path> files) throws IOException {
+        LOG.info("Root path is " + abs.toString());
         FileStatus[] contents = listStatus(abs);
+        LOG.info(String.format("contents size = %d", contents.length));
+        LOG.info(String.format("START files size = %d", files.size()));
+        int num_files = 0;
+        int added = 0;
         for(FileStatus stat: contents) {
             Path p = stat.getPath();
             if(!stat.isDir()) {
+                num_files++;
                 String filename = p.getName();
                 for(String extension: extensions) {
                     if(filename.endsWith(extension) && stat.getLen()>0) {
+                        added++;
                         String toAdd;
                         if(stripExtension) {
                             toAdd = Utils.stripExtension(filename, extension);
                         } else {
                             toAdd = filename;
                         }
-                        files.add(toAdd);
+                        files.add(p);
                         break;
                     }
                 }
             }
         }
+        LOG.info(String.format("END files size = %d",files.size()));
+        LOG.info(String.format("Stats - num files = %d, added = %d", num_files, added));
     }
 
     public List<Path> getStoredUnfinishedFiles() throws IOException {
