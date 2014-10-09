@@ -227,7 +227,9 @@ public abstract class AbstractPail {
         FileStatus[] contents = listStatus(abs);
         for(FileStatus stat: contents) {
             Path p = stat.getPath();
-            if(!stat.isDir()) {
+            if(stat.isDir()) {
+                getFiles(p, stat.getPath().getName(), extensions, stripExtension, files);
+            } else {
                 String filename = p.getName();
                 for(String extension: extensions) {
                     if(filename.endsWith(extension) && stat.getLen()>0) {
