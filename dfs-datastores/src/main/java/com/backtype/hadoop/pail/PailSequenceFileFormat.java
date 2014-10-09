@@ -18,23 +18,6 @@ public class PailSequenceFileFormat extends SequenceFileFormat {
     public PailSequenceFileFormat(Map<String, Object> args) {
         super(args);
     }
-    //Supporting class for listLocatedStatus
-    private static class MultiPathFilter implements PathFilter {
-        private List<PathFilter> filters;
-
-        public MultiPathFilter(List<PathFilter> filters) {
-            this.filters = filters;
-        }
-
-        public boolean accept(Path path) {
-            for (PathFilter filter : filters) {
-                if (!filter.accept(path)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
 
     // I have decided to replace the entire class. It was too hard to derive and just add
     // locatedliststatus. The dealbreaker was the private member variable.
@@ -87,7 +70,7 @@ public class PailSequenceFileFormat extends SequenceFileFormat {
             // creates a MultiPathFilter with the hiddenFileFilter and the
             // user provided one (if any).
             List<PathFilter> filters = new ArrayList<PathFilter>();
-            filters.add(hiddenFileFilter);
+            filters.add(MultiPathFilter.getHiddenFileFilter());
             PathFilter jobFilter = getInputPathFilter(job);
             if (jobFilter != null) {
                 filters.add(jobFilter);
