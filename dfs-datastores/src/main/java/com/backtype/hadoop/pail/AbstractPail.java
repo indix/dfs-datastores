@@ -33,17 +33,20 @@ public abstract class AbstractPail {
         private RecordOutputStream delegate;
 
         public PailOutputStream(String userfilename, boolean overwrite) throws IOException {
-            tempFile = new Path(_instance_root, userfilename + TEMP_EXTENSION);
+            String tempExtension = isS3FS() ? EXTENSION : TEMP_EXTENSION;
+            tempFile = new Path(_instance_root, userfilename + tempExtension);
             finalFile = new Path(_instance_root, userfilename + EXTENSION);
             if(finalFile.getName().equals(EXTENSION)) throw new IllegalArgumentException("Cannot create empty user file name");
 
             mkdirs(tempFile.getParent());
-            if(exists(tempFile)) {
+            boolean overwriteTempFile = isNotS3FS() || overwrite;
+            if(overwriteTempFile && exists(tempFile)) {
                 delete(tempFile, false);
             }
             delegate = createOutputStream(tempFile);
 
-            if(overwrite && exists(finalFile)) {
+            boolean overwriteFinalFile = isNotS3FS() && overwrite;
+            if(overwriteFinalFile && exists(finalFile)) {
                 delete(finalFile, false);
             }
 
@@ -125,14 +128,22 @@ public abstract class AbstractPail {
 
     public void writeMetadata(String metafilename, String metadata) throws IOException {
         Path metaPath = toStoredMetadataPath(metafilename);
-        Path metaTmpPath = toStoredMetadataTmpPath(metafilename);
-        mkdirs(metaTmpPath.getParent());
         delete(metaPath, false);
-        delete(metaTmpPath, false);
-        RecordOutputStream os = createOutputStream(metaTmpPath);
+        if (isS3FS()) {
+            writeMetadata(metaPath, metadata);
+        } else {
+            Path metaTmpPath = toStoredMetadataTmpPath(metafilename);
+            writeMetadata(metaTmpPath, metadata);
+            rename(metaTmpPath, metaPath);
+        }
+    }
+
+    private void writeMetadata(Path metaPath, String metadata) throws IOException {
+        mkdirs(metaPath.getParent());
+        delete(metaPath, false);
+        RecordOutputStream os = createOutputStream(metaPath);
         os.writeRaw(("M" + metadata).getBytes("UTF-8")); //ensure that it's not an empty record
         os.close();
-        rename(metaTmpPath, metaPath);
     }
 
     public String getMetadata(String metafilename) throws IOException {
@@ -152,8 +163,12 @@ public abstract class AbstractPail {
     protected abstract boolean delete(Path path, boolean recursive) throws IOException;
     protected abstract boolean exists(Path path) throws IOException;
     protected abstract boolean rename(Path source, Path dest) throws IOException;
+    protected abstract boolean isS3FS();
     protected abstract boolean mkdirs(Path path) throws IOException;
     protected abstract FileStatus[] listStatus(Path path) throws IOException;
+    protected boolean isNotS3FS() {
+        return !isS3FS();
+    }
 
     public List<String> getUserFileNames() throws IOException {
         List<String> ret = new ArrayList<String>();
