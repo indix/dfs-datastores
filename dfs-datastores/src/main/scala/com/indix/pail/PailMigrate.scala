@@ -26,20 +26,10 @@ class PailMigrate extends Tool {
   * - If output dir already exists, just append to it, instead of writing to temp and absorbing
   * - Finally, clear out all processed files (disable source removal based on configuration).
   *
-  * InputFormat - PailInputFormat
   * OutputFormat - PailOutputFormat - needs a PailSpec
   * */
 
   override def run(arguments: Array[String]): Int = {
-    if (arguments.length < 4) {
-      println(s"Usage: hadoop job <JAR> ${this.getClass.getCanonicalName} <input_dir> <output_dir> <target_pail_spec_class_fqcn> <record_type> [<keep_source_files>]")
-      println("input-dir - Input pail dir from which records need to be read and copied(or moved)")
-      println("output-dir - Destination pail dir to which records need to be written to")
-      println("target-pail-spec - Fully qualified class name of output PailStructure. This will be used to decide the partitioning scheme")
-      println("record-type - Fully qualified class name of the record type. Eg: com.indix.models.ProductRecordPail")
-      println("keep-source - set this to true to keep the source files. This is optional, Defaults to false, which means, source files will be removed if the job succeeds")
-      System.exit(1)
-    }
 
     val args = Args(arguments)
 
@@ -52,7 +42,7 @@ class PailMigrate extends Tool {
     val recordType = args("record-type")
     val recordClass = Class.forName(recordType)
 
-    val keepSourceFiles = Option(args("keep-source")).exists(_ equals "true")
+    val keepSourceFiles = args.boolean("keep-source")
 
     val targetPailStructure = Class.forName(targetSpecClass).newInstance().asInstanceOf[PailStructure[recordClass.type]]
 
@@ -65,7 +55,7 @@ class PailMigrate extends Tool {
     jobConf.setOutputFormat(classOf[PailOutputFormat])
     FileOutputFormat.setOutputPath(jobConf, new Path(outputDir))
 
-    com.backtype.support.Utils.setObject(jobConf, PailMigrate.OUTPUT_STRUCTURE, targetPailStructure)
+    Utils.setObject(jobConf, PailMigrate.OUTPUT_STRUCTURE, targetPailStructure)
 
     jobConf.setMapperClass(classOf[PailMigrateMapper])
 
