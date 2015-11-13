@@ -6,6 +6,7 @@ import com.backtype.hadoop.pail.SequenceFileFormat.SequenceFilePailInputFormat
 import com.backtype.hadoop.pail.{PailOutputFormat, PailRecordInfo, PailStructure}
 import com.backtype.support.Utils
 import com.indix.pail.PailMigrate.PailMigrateMapper
+import com.twitter.scalding.Args
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{BytesWritable, Text}
@@ -29,42 +30,29 @@ class PailMigrate extends Tool {
   * OutputFormat - PailOutputFormat - needs a PailSpec
   * */
 
-  override def run(args: Array[String]): Int = {
-    if (args.length < 4) {
+  override def run(arguments: Array[String]): Int = {
+    if (arguments.length < 4) {
       println(s"Usage: hadoop job <JAR> ${this.getClass.getCanonicalName} <input_dir> <output_dir> <target_pail_spec_class_fqcn> <record_type> [<keep_source_files>]")
-      println("input_dir - Input pail dir from which records need to be read and copied(or moved)")
-      println("output_dir - Destination pail dir to which records need to be written to")
-      println("target_pail_spec_class_fqcn - Fully qualified class name of output PailStructure. This will be used to decide the partitioning scheme")
-      println("record_type - Fully qualified class name of the record type. Eg: com.indix.models.ProductRecordPail")
-      println("keep_source_files - set this to true to keep the source files. This is optional, Defaults to false, which means, source files will be removed if the job succeeds")
+      println("input-dir - Input pail dir from which records need to be read and copied(or moved)")
+      println("output-dir - Destination pail dir to which records need to be written to")
+      println("target-pail-spec - Fully qualified class name of output PailStructure. This will be used to decide the partitioning scheme")
+      println("record-type - Fully qualified class name of the record type. Eg: com.indix.models.ProductRecordPail")
+      println("keep-source - set this to true to keep the source files. This is optional, Defaults to false, which means, source files will be removed if the job succeeds")
       System.exit(1)
     }
 
-    /*Input Pail location to pick up and migrate
-    * Input paths will be deleted unless `keepSourceFiles` flag is set
-    * */
-    val inputDir = args(0)
+    val args = Args(arguments)
 
-    /*
-    * Output location to write the records
-    * The output location will be (vertically) partitioned based on the `targetSpecClass` parameter
-    * */
-    val outputDir = args(1)
+    val inputDir = args("input-dir")
 
-    /*
-    * FQCN of the PailStructure class. Note that, the class that's passed here should be available in the classpath
-    * This is used to write individual records into appropriate vertical partitions in the output location
-    * */
-    val targetSpecClass = args(2)
+    val outputDir = args("output-dir")
 
-    /*
-    * FQCN of the PailRecordInfo class. Note that, the class that's passed here should be available in the classpath
-    * This is used to write individual records into appropriate vertical partitions in the output location
-    * */
-    val recordType = args(3)
+    val targetSpecClass = args("target-pail-spec")
+
+    val recordType = args("record-type")
     val recordClass = Class.forName(recordType)
 
-    val keepSourceFiles = Option(args(4)).exists(_ equals "true")
+    val keepSourceFiles = Option(args("keep-source")).exists(_ equals "true")
 
     val targetPailStructure = Class.forName(targetSpecClass).newInstance().asInstanceOf[PailStructure[recordClass.type]]
 
@@ -83,8 +71,6 @@ class PailMigrate extends Tool {
 
     jobConf.setNumReduceTasks(0)
     jobConf.setJarByClass(this.getClass)
-
-    jobConf.set("pail.migrate.record", recordType)
 
     val job = new JobClient(jobConf).submitJob(jobConf)
 
@@ -112,6 +98,7 @@ class PailMigrate extends Tool {
 
     0 // return success, failures throw an exception anyway!
   }
+
   override def getConf: Configuration = getConf
 
   override def setConf(configuration: Configuration): Unit = this.configuration = configuration
@@ -122,7 +109,6 @@ object PailMigrate {
 
   class PailMigrateMapper extends Mapper[PailRecordInfo, BytesWritable, Text, BytesWritable] {
     var outputPailStructure: PailStructure[Any] = null
-    var recordClass: Class[_] = null
 
     override def map(key: PailRecordInfo, value: BytesWritable, outputCollector: OutputCollector[Text, BytesWritable], reporter: Reporter): Unit = {
       val record = outputPailStructure.deserialize(value.getBytes)
@@ -134,14 +120,15 @@ object PailMigrate {
 
     override def configure(jobConf: JobConf): Unit = {
       outputPailStructure = Utils.getObject(jobConf, OUTPUT_STRUCTURE).asInstanceOf[PailStructure[Any]]
-      recordClass = Class.forName(jobConf.get("pail.migrate.record"))
     }
   }
 
 }
 
-object PailMigrateUtil extends App{
-  ToolRunner.run(new Configuration(), new PailMigrate, args)
+object PailMigrateUtil {
+  def main(args: Array[String]) {
+    ToolRunner.run(new Configuration(), new PailMigrate, args)
+  }
 }
 
 
