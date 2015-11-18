@@ -108,8 +108,6 @@ public abstract class AbstractPail {
             if(finalFile.getName().equals(EXTENSION)) throw new IllegalArgumentException("Cannot create empty user file name");
 
             mkdirs(finalFile.getParent());
-            delegate = createOutputStream(finalFile);
-
             if(overwrite && exists(finalFile)) {
                 delete(finalFile, false);
             }
@@ -121,11 +119,9 @@ public abstract class AbstractPail {
             *
             * Watch out for errors related to this and decide to remove this based on it.
             * */
-            if(exists(finalFile)) {
-                delegate.close();
-                delete(finalFile, false);
-                throw new IOException("File already exists " + finalFile.toString());
-            }
+            if(exists(finalFile)) throw new IOException("File already exists " + finalFile.toString());
+
+            delegate = createOutputStream(finalFile);
         }
 
         public void writeRaw(byte[] record) throws IOException {
