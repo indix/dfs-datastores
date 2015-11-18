@@ -556,6 +556,11 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
     }
 
     @Override
+    protected boolean isS3Root() {
+        return _fs.getScheme().startsWith("s3");
+    }
+
+    @Override
     protected FileStatus[] listStatus(Path path) throws IOException {
         FileStatus[] arr =  _fs.listStatus(path);
 

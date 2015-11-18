@@ -92,6 +92,60 @@ public abstract class AbstractPail {
         }
     }
 
+    /*  S3PailOutputStream - doesn't create pail file with tmp extension.
+        Writes to S3 are generally buffered to local FS and
+        once the write completes(on file close) the entire file gets 'put' to S3
+
+        Avoids the extra rename that's there in PailOutputStream. Renames in S3 are costly.
+    * */
+    private class S3PailOutputStream implements RecordOutputStream {
+
+        private Path finalFile;
+        private RecordOutputStream delegate;
+
+        public S3PailOutputStream(String userfilename, boolean overwrite) throws IOException {
+            finalFile = new Path(_instance_root, userfilename + EXTENSION);
+            if(finalFile.getName().equals(EXTENSION)) throw new IllegalArgumentException("Cannot create empty user file name");
+
+            mkdirs(finalFile.getParent());
+            delegate = createOutputStream(finalFile);
+
+            if(overwrite && exists(finalFile)) {
+                delete(finalFile, false);
+            }
+
+            /*
+            * NB:
+            * S3 provides read-after-write consistency and eventual consistency for deletes.
+            * This means that after the `delete` above, we might still have exists return true.
+            *
+            * Watch out for errors related to this and decide to remove this based on it.
+            * */
+            if(exists(finalFile)) {
+                delegate.close();
+                delete(finalFile, false);
+                throw new IOException("File already exists " + finalFile.toString());
+            }
+        }
+
+        public void writeRaw(byte[] record) throws IOException {
+            writeRaw(record, 0, record.length);
+        }
+
+        public void close() throws IOException {
+            delegate.close();
+        }
+
+        @Override
+        public void flush() throws IOException {
+            // NOT DOING ANYTHING TO LEAVE IT AT STATUS-QUO
+        }
+
+        public void writeRaw(byte[] record, int start, int length) throws IOException {
+            delegate.writeRaw(record, start, length);
+        }
+    }
+
     private String _instance_root;
 
     public AbstractPail(String path) throws IOException {
@@ -107,7 +161,7 @@ public abstract class AbstractPail {
     }
 
     public RecordOutputStream openWrite(String userfilename, boolean overwrite) throws IOException {
-        return new PailOutputStream(userfilename, overwrite);
+        return isS3Root() ? new S3PailOutputStream(userfilename, overwrite) : new PailOutputStream(userfilename, overwrite);
     }
 
     public RecordInputStream openRead(String userfilename) throws IOException {
@@ -153,6 +207,7 @@ public abstract class AbstractPail {
     protected abstract boolean exists(Path path) throws IOException;
     protected abstract boolean rename(Path source, Path dest) throws IOException;
     protected abstract boolean mkdirs(Path path) throws IOException;
+    protected abstract boolean isS3Root();
     protected abstract FileStatus[] listStatus(Path path) throws IOException;
 
     public List<String> getUserFileNames() throws IOException {
