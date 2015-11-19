@@ -8,6 +8,8 @@ import com.backtype.support.Utils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.s3.S3FileSystem;
+import org.apache.hadoop.fs.s3native.NativeS3FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -557,7 +559,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
 
     @Override
     protected boolean isS3Root() {
-        return _fs.getScheme().startsWith("s3");
+        return _fs instanceof NativeS3FileSystem || _fs instanceof S3FileSystem;
     }
 
     @Override
