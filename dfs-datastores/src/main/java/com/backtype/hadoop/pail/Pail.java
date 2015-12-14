@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.*;
 
 public class Pail<T> extends AbstractPail implements Iterable<T>{
+    private static final String CONSOLIDATED = "CONSOLIDATED";
     public static Logger LOG = LoggerFactory.getLogger(Pail.class);
 
     public static final String META = "pail.meta";
@@ -508,7 +509,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
         while(toCheck.size()>0) {
             String dir = toCheck.remove(0);
             List<String> dirComponents = componentsFromRoot(dir);
-            if(!structure.isValidTarget(dirComponents.toArray(new String[dirComponents.size()]))) {
+            if(!structure.isValidTarget(dirComponents.toArray(new String[dirComponents.size()])) && !isConsolidated(dir)) {
                 FileStatus[] contents = listStatus(new Path(toFullPath(dir)));
                 for(FileStatus f: contents) {
                     if(!f.isDir()) {
@@ -525,6 +526,14 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
         }
 
         Consolidator.consolidate(_fs, _format, new PailPathLister(false), consolidatedirs, maxSize, EXTENSION, structure, getRoot());
+    }
+
+    private boolean isConsolidated(String dir) throws IOException {
+        try {
+            return _fs.exists(new Path(dir + "/" + CONSOLIDATED));
+        } catch (FileNotFoundException e) {
+            return false;
+        }
     }
 
     @Override

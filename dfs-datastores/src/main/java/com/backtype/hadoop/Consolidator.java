@@ -25,6 +25,7 @@ import java.util.*;
 public class Consolidator {
     public static final long DEFAULT_CONSOLIDATION_SIZE = 1024*1024*1024*2l; //2G
     private static final String ARGS = "consolidator_args";
+    private static final String CONSOLIDATED = "CONSOLIDATED";
 
     private static Thread shutdownHook;
     private static RunningJob job = null;
@@ -133,6 +134,9 @@ public class Consolidator {
                 Thread.sleep(100);
             }
             if(!job.isSuccessful()) throw new IOException("Consolidator failed");
+            for (String consolidatedDirs : dirs) {
+                fs.createNewFile(new Path(consolidatedDirs + "/" + CONSOLIDATED));
+            }
             deregisterShutdownHook();
         } catch(IOException e) {
 
@@ -211,6 +215,7 @@ public class Consolidator {
                 status = "Renaming " + tmpFile.toString() + " to " + finalFile.toString();
                 LOG.info(status);
                 rprtr.setStatus(status);
+
 
                 if(!fs.rename(tmpFile, finalFile))
                     throw new IOException("could not rename " + tmpFile.toString() + " to " + finalFile.toString());
