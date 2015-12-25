@@ -106,6 +106,7 @@ object Build extends Build {
       "com.google.guava" % "guava" % "13.0",
       "org.apache.hadoop" % "hadoop-client" % "2.0.0-mr1-cdh4.2.1" % "provided",
       "org.apache.hadoop" % "hadoop-core" % "2.0.0-mr1-cdh4.2.1" % "test",
+      "com.indix" % "hadoop-s3" % "1.0.10" excludeAll(ExclusionRule(organization = "org.apache.hadoop")),
       "com.hadoop.gplcompression" % "hadoop-lzo" % "0.4.15",
       "org.scalatest" %% "scalatest" % "2.2.0" % "test",
       "com.twitter" % "scalding-args_2.10" % "0.15.0",
