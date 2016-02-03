@@ -89,7 +89,7 @@ class PailMigrate extends Tool {
     0 // return success, failures throw an exception anyway!
   }
 
-  override def getConf: Configuration = getConf
+  override def getConf: Configuration = configuration
 
   override def setConf(configuration: Configuration): Unit = this.configuration = configuration
 }
