@@ -1,11 +1,12 @@
 package com.indix.pail
 
 import java.io.IOException
+import java.util
 
 import com.backtype.hadoop.pail.SequenceFileFormat.SequenceFilePailInputFormat
 import com.backtype.hadoop.pail.{PailOutputFormat, PailRecordInfo, PailStructure}
 import com.backtype.support.Utils
-import com.indix.pail.PailMigrate.PailMigrateMapper
+import com.indix.pail.PailMigrate._
 import com.twitter.scalding.Args
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
@@ -52,14 +53,18 @@ class PailMigrate extends Tool {
     jobConf.setInputFormat(classOf[SequenceFilePailInputFormat])
     FileInputFormat.addInputPath(jobConf, new Path(inputDir))
 
+    jobConf.setMapOutputKeyClass(classOf[Text])
+    jobConf.setMapOutputValueClass(classOf[BytesWritable])
+
     jobConf.setOutputFormat(classOf[PailOutputFormat])
     FileOutputFormat.setOutputPath(jobConf, new Path(outputDir))
 
     Utils.setObject(jobConf, PailMigrate.OUTPUT_STRUCTURE, targetPailStructure)
 
     jobConf.setMapperClass(classOf[PailMigrateMapper])
+    jobConf.setReducerClass(classOf[PailMigrateReducer])
 
-    jobConf.setNumReduceTasks(0)
+    jobConf.setNumReduceTasks(200)
     jobConf.setJarByClass(this.getClass)
 
     val job = new JobClient(jobConf).submitJob(jobConf)
@@ -110,6 +115,18 @@ object PailMigrate {
 
     override def configure(jobConf: JobConf): Unit = {
       outputPailStructure = Utils.getObject(jobConf, OUTPUT_STRUCTURE).asInstanceOf[PailStructure[Any]]
+    }
+  }
+
+  class PailMigrateReducer extends Reducer[Text, BytesWritable, Text, BytesWritable] {
+
+    override def close(): Unit = {}
+
+    override def configure(jobConf: JobConf): Unit = {}
+
+    override def reduce(key: Text, iterator: util.Iterator[BytesWritable], outputCollector: OutputCollector[Text, BytesWritable], reporter: Reporter): Unit = {
+      while(iterator.hasNext)
+        outputCollector.collect(key, iterator.next())
     }
   }
 
