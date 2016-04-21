@@ -4,7 +4,7 @@ import java.io.IOException
 import java.util
 
 import com.backtype.hadoop.pail.SequenceFileFormat.SequenceFilePailInputFormat
-import com.backtype.hadoop.pail.{PailOutputFormat, PailRecordInfo, PailStructure}
+import com.backtype.hadoop.pail.{PailInputSplit, PailOutputFormat, PailRecordInfo, PailStructure}
 import com.backtype.support.Utils
 import com.indix.pail.PailMigrate._
 import com.twitter.scalding.Args
@@ -94,30 +94,34 @@ object PailMigrate {
   class PailMigrateMapper extends Mapper[PailRecordInfo, BytesWritable, Text, BytesWritable] {
     var outputPailStructure: PailStructure[Any] = null
     val logger = Logger.getLogger(this.getClass)
-
+    val splits : scala.collection.mutable.Set[InputSplit] = scala.collection.mutable.Set[InputSplit]()
     override def map(key: PailRecordInfo, value: BytesWritable,
                      outputCollector: OutputCollector[Text, BytesWritable],
                      reporter: Reporter): Unit = {
       val record = outputPailStructure.deserialize(value.getBytes)
       val key = new Text(Utils.join(outputPailStructure.getTarget(record), "/"))
-      val inputFileLocations = reporter.getInputSplit.getLocations
-      if (!keepSourceFiles) {
-        inputFileLocations.foreach{
-        p => val path = new Path(p)
-          val fs = path.getFileSystem(configuration)
-            logger.info(s"Deleting path $p")
-            val deleteStatus = fs.delete(path, true)
-
-            if (!deleteStatus)
-              logger.warn(s"Deleting $p failed. \n *** Please delete the source manually ***")
-            else
-              logger.info(s"Deleting $p completed successfully.")
-          }
-      }
+      splits.add(reporter.getInputSplit)
       outputCollector.collect(key, value)
     }
 
-    override def close(): Unit = {}
+    override def close(): Unit = {
+      splits.map(_.asInstanceOf[PailInputSplit]).filter(_.getIsLastSplit).foreach { split =>
+        if (!keepSourceFiles) {
+          val inputFileLocations = split.getLocations
+          inputFileLocations.foreach {
+            p => val path = new Path(p)
+              val fs = path.getFileSystem(configuration)
+              logger.info(s"Deleting path $p")
+              val deleteStatus = fs.delete(path, true)
+
+              if (!deleteStatus)
+                logger.warn(s"Deleting $p failed. \n *** Please delete the source manually ***")
+              else
+                logger.info(s"Deleting $p completed successfully.")
+          }
+        }
+      }
+    }
 
     override def configure(jobConf: JobConf): Unit = {
       outputPailStructure = Utils.getObject(jobConf, OUTPUT_STRUCTURE).asInstanceOf[PailStructure[Any]]

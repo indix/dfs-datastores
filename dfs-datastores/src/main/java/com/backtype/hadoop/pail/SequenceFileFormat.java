@@ -22,6 +22,8 @@ import org.apache.hadoop.mapred.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -207,10 +209,24 @@ public class SequenceFileFormat implements PailFormat {
     public static class SequenceFilePailInputFormat extends SequenceFileInputFormat<PailRecordInfo, BytesWritable> {
         private Pail _currPail;
 
+        public List<PailInputSplit> withLastSplitInfo(List<PailInputSplit> pailSplits) {
+            PailInputSplit lastSplit = null;
+            long highestOffset = 0;
+            for (PailInputSplit pailSplit : pailSplits) {
+                long offset = pailSplit.getStart();
+                if (offset > highestOffset) {
+                    highestOffset = offset;
+                    lastSplit.setIsLastSplit(false);
+                    pailSplit.setIsLastSplit(true);
+                    lastSplit = pailSplit;
+                }
+            }
+            return pailSplits;
+        }
 
         @Override
         public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
-            List<InputSplit> ret = new ArrayList<InputSplit>();
+            List<PailInputSplit> ret = new ArrayList<PailInputSplit>();
             Path[] roots = FileInputFormat.getInputPaths(job);
             for(int i=0; i < roots.length; i++) {
                 _currPail = new Pail(roots[i].toString());
@@ -219,6 +235,7 @@ public class SequenceFileFormat implements PailFormat {
                     ret.add(new PailInputSplit(_currPail.getFileSystem(), _currPail.getInstanceRoot(), _currPail.getSpec(), job, (FileSplit) split));
                 }
             }
+            withLastSplitInfo(ret);
             return ret.toArray(new InputSplit[ret.size()]);
         }
 

@@ -18,6 +18,7 @@ public class PailInputSplit extends FileSplit {
     private String[] _hosts;
     private PailSpec _spec;
     private String _relPath;
+    private Boolean isLastSplit = false;
 
     public PailInputSplit() {
         super(null, 0, 0, (String[]) null);
@@ -72,5 +73,13 @@ public class PailInputSplit extends FileSplit {
 
         _relPath = WritableUtils.readString(in);
         super.readFields(in);
+    }
+
+    public Boolean getIsLastSplit() {
+        return isLastSplit;
+    }
+
+    public void setIsLastSplit(Boolean isLastSplit) {
+        this.isLastSplit = isLastSplit;
     }
 }
