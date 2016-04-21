@@ -101,10 +101,10 @@ object PailMigrate {
       val record = outputPailStructure.deserialize(value.getBytes)
       val key = new Text(Utils.join(outputPailStructure.getTarget(record), "/"))
       val inputFileLocations = reporter.getInputSplit.getLocations
-      inputFileLocations.foreach{
+      if (!keepSourceFiles) {
+        inputFileLocations.foreach{
         p => val path = new Path(p)
           val fs = path.getFileSystem(configuration)
-          if (!keepSourceFiles) {
             logger.info(s"Deleting path $p")
             val deleteStatus = fs.delete(path, true)
 
