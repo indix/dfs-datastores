@@ -208,10 +208,11 @@ public class SequenceFileFormat implements PailFormat {
 
         public List<PailInputSplit> withLastSplitInfo(List<PailInputSplit> pailSplits) {
             PailInputSplit lastSplit = pailSplits.get(0);
-            long highestOffset = 0;
+            lastSplit.setIsLastSplit(true);
+            long highestOffset = lastSplit.getStart();
             for (PailInputSplit pailSplit : pailSplits) {
                 long offset = pailSplit.getStart();
-                if (offset > highestOffset) {
+                if ((offset > highestOffset) && (pailSplit.getPath() == lastSplit.getPath())) {
                     highestOffset = offset;
                     lastSplit.setIsLastSplit(false);
                     lastSplit = pailSplit;
@@ -223,17 +224,30 @@ public class SequenceFileFormat implements PailFormat {
 
         @Override
         public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
-            List<PailInputSplit> ret = new ArrayList<PailInputSplit>();
+            List<PailInputSplit> returnList = new ArrayList<PailInputSplit>();
             Path[] roots = FileInputFormat.getInputPaths(job);
             for(int i=0; i < roots.length; i++) {
                 _currPail = new Pail(roots[i].toString());
                 InputSplit[] splits = super.getSplits(job, numSplits);
+                List<PailInputSplit> ret = new ArrayList<PailInputSplit>();
+                Path splitPath = ((FileSplit)splits[0]).getPath();
+                PailInputSplit pl;
                 for(InputSplit split: splits) {
-                    ret.add(new PailInputSplit(_currPail.getFileSystem(), _currPail.getInstanceRoot(), _currPail.getSpec(), job, (FileSplit) split));
+                    pl = new PailInputSplit(_currPail.getFileSystem(), _currPail.getInstanceRoot(), _currPail.getSpec(), job, (FileSplit) split);
+                    if (pl.getPath() != splitPath)
+                    {
+                        splitPath=pl.getPath();
+                        withLastSplitInfo(ret);
+                        returnList.addAll(ret);
+                        ret = new ArrayList<PailInputSplit>();
+                    }
+                    ret.add(pl);
                 }
+                withLastSplitInfo(ret);
+                returnList.addAll(ret);
             }
-            withLastSplitInfo(ret);
-            return ret.toArray(new InputSplit[ret.size()]);
+
+            return returnList.toArray(new InputSplit[returnList.size()]);
         }
 
         @Override
