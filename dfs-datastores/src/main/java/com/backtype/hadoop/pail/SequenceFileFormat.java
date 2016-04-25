@@ -26,10 +26,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SequenceFileFormat implements PailFormat {
     public static final String TYPE_ARG = "compressionType";
@@ -210,15 +207,15 @@ public class SequenceFileFormat implements PailFormat {
         private Pail _currPail;
 
         public List<PailInputSplit> withLastSplitInfo(List<PailInputSplit> pailSplits) {
-            PailInputSplit lastSplit = null;
+            PailInputSplit lastSplit = pailSplits.get(0);
             long highestOffset = 0;
             for (PailInputSplit pailSplit : pailSplits) {
                 long offset = pailSplit.getStart();
                 if (offset > highestOffset) {
                     highestOffset = offset;
                     lastSplit.setIsLastSplit(false);
-                    pailSplit.setIsLastSplit(true);
                     lastSplit = pailSplit;
+                    lastSplit.setIsLastSplit(true);
                 }
             }
             return pailSplits;
