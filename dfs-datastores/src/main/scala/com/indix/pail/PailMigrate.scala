@@ -44,6 +44,7 @@ class PailMigrate extends Tool {
     val recordClass = Class.forName(recordType)
 
     val keepSourceFiles = args.boolean("keep-source")
+    val runReducer = args.getOrElse("run-reducer", "true").toBoolean
 
     val targetPailStructure = Class.forName(targetSpecClass).newInstance().asInstanceOf[PailStructure[recordClass.type]]
 
@@ -62,10 +63,12 @@ class PailMigrate extends Tool {
     Utils.setObject(jobConf, PailMigrate.OUTPUT_STRUCTURE, targetPailStructure)
 
     jobConf.setMapperClass(classOf[PailMigrateMapper])
-    jobConf.setReducerClass(classOf[PailMigrateReducer])
-
-    jobConf.setNumReduceTasks(200)
     jobConf.setJarByClass(this.getClass)
+
+    if (runReducer) {
+      jobConf.setReducerClass(classOf[PailMigrateReducer])
+      jobConf.setNumReduceTasks(200)
+    }
 
     val job = new JobClient(jobConf).submitJob(jobConf)
 
@@ -125,7 +128,7 @@ object PailMigrate {
     override def configure(jobConf: JobConf): Unit = {}
 
     override def reduce(key: Text, iterator: util.Iterator[BytesWritable], outputCollector: OutputCollector[Text, BytesWritable], reporter: Reporter): Unit = {
-      while(iterator.hasNext)
+      while (iterator.hasNext)
         outputCollector.collect(key, iterator.next())
     }
   }
