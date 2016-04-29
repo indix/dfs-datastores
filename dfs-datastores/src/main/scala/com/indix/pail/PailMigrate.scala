@@ -68,6 +68,8 @@ class PailMigrate extends Tool {
     if (runReducer) {
       jobConf.setReducerClass(classOf[PailMigrateReducer])
       jobConf.setNumReduceTasks(200)
+    } else {
+      jobConf.setNumReduceTasks(0)
     }
 
     val job = new JobClient(jobConf).submitJob(jobConf)
