@@ -1,10 +1,10 @@
 package com.indix.pail
 
-import java.io.IOException
+import java.io.{File, IOException}
 import java.util
 
 import com.backtype.hadoop.pail.SequenceFileFormat.SequenceFilePailInputFormat
-import com.backtype.hadoop.pail.{PailOutputFormat, PailRecordInfo, PailStructure}
+import com.backtype.hadoop.pail._
 import com.backtype.support.Utils
 import com.indix.pail.PailMigrate._
 import com.twitter.scalding.Args
@@ -14,6 +14,22 @@ import org.apache.hadoop.io.{BytesWritable, Text}
 import org.apache.hadoop.mapred._
 import org.apache.hadoop.util.{Tool, ToolRunner}
 import org.apache.log4j.Logger
+import scala.collection.JavaConversions._
+
+class BlacklistedPailPathLister extends PailPathLister {
+  val delegate = new AllPailPathLister()
+  var blacklistedPaths: Array[String] = _
+
+  def initConf(blacklistedPaths: Array[String]): Unit = {
+    this.blacklistedPaths = blacklistedPaths
+  }
+
+
+  override def getPaths(p: Pail[_]): util.List[Path] = {
+    val paths = delegate.getPaths(p)
+    paths.filter(p => !blacklistedPaths.exists(excludePattern => p.toUri.toString.startsWith(excludePattern)))
+  }
+}
 
 class PailMigrate extends Tool {
   val logger = Logger.getLogger(this.getClass)
@@ -45,6 +61,8 @@ class PailMigrate extends Tool {
 
     val keepSourceFiles = args.boolean("keep-source")
     val runReducer = args.getOrElse("run-reducer", "true").toBoolean
+    val isBlackListEnabled = args.boolean("blacklist")
+    val blacklistedPath = args.getOrElse("blacklist", "")
 
     val targetPailStructure = Class.forName(targetSpecClass).newInstance().asInstanceOf[PailStructure[recordClass.type]]
 
@@ -61,6 +79,15 @@ class PailMigrate extends Tool {
     FileOutputFormat.setOutputPath(jobConf, new Path(outputDir))
 
     Utils.setObject(jobConf, PailMigrate.OUTPUT_STRUCTURE, targetPailStructure)
+
+
+    if (isBlackListEnabled) {
+      val blacklistedPaths = io.Source.fromFile(new File(blacklistedPath))("UTF-8").getLines().toArray
+      val pathLister = new BlacklistedPailPathLister()
+      pathLister.initConf(blacklistedPaths)
+
+      PailFormatFactory.setPailPathLister(jobConf, pathLister)
+    }
 
     jobConf.setMapperClass(classOf[PailMigrateMapper])
     jobConf.setJarByClass(this.getClass)
