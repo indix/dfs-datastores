@@ -14,6 +14,7 @@ import org.apache.hadoop.mapred.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.backtype.support.TestUtils.emitToPail;
@@ -68,6 +69,13 @@ public abstract class PailFormatTester extends TestCase {
         JobConf conf = new JobConf();
         FileInputFormat.addInputPath(conf, new Path(path));
         InputSplit[] splits = informat.getSplits(conf, 10000);
+        for (InputSplit split: splits){
+            PailInputSplit pailSplit = ((PailInputSplit)split);
+            System.out.println("----");
+            System.out.println(Arrays.toString(pailSplit.getLocations()));
+            System.out.println(pailSplit.getIsLastSplit());
+            System.out.println(split);
+        }
         assertTrue(splits.length > 3); //want to test that splitting is working b/c i made really big files
         for (InputSplit split : splits) {
             RecordReader<PailRecordInfo, BytesWritable> rr = informat.getRecordReader(split, conf, Reporter.NULL);
@@ -114,6 +122,58 @@ public abstract class PailFormatTester extends TestCase {
         rr.close();
 
         assertEquals(expected, results);
+    }
+
+    public void testLastSplit() throws Exception{
+        String path = getTmpPath(local, "pail");
+        Pail pail = Pail.create(local, path);
+        Multimap<String, String> expected = HashMultimap.create();
+
+        List<String> builder = new ArrayList<String>();
+        for (int i = 0; i < Math.random() * 1000; i++) {
+            String val = "a" + i;
+            builder.add(val);
+            expected.put("", val);
+        }
+        emitToPail(pail, "a", builder);
+
+        builder = new ArrayList<String>();
+        for (int i = 0; i < Math.random() * 1000000; i++) {
+            String val = "b" + i;
+            builder.add(val);
+            expected.put("a/b/c/ddd", val);
+        }
+        emitToPail(pail, "a/b/c/ddd/1", builder);
+
+
+        builder = new ArrayList<String>();
+        for (int i = 0; i < Math.random() * 1000000; i++) {
+            String val = "c" + i;
+            builder.add(val);
+            expected.put("a/b/d", val);
+        }
+        emitToPail(pail, "a/b/d/111", builder);
+
+        Multimap<String, String> results = HashMultimap.create();
+
+
+        InputFormat informat = format.getInputFormatClass().newInstance();
+        JobConf conf = new JobConf();
+        FileInputFormat.addInputPath(conf, new Path(path));
+        InputSplit[] splits = informat.getSplits(conf, 10000);
+        List<InputSplit> lastSplits = new ArrayList<InputSplit>();
+        for (InputSplit split: splits){
+            PailInputSplit pailSplit = ((PailInputSplit)split);
+            System.out.println(pailSplit);
+            if (pailSplit.getIsLastSplit()){
+                lastSplits.add(pailSplit);
+            }
+        }
+        assertEquals(lastSplits.size(), 3);
+        for (InputSplit lastSplit: lastSplits){
+            assertEquals((((PailInputSplit)lastSplit).getIsLastSplit()), (Boolean)true);
+        }
+
     }
 
     private void assertDataFromRecordInfo(PailRecordInfo recordInfo, String expected) throws IOException {

@@ -22,12 +22,11 @@ import org.apache.hadoop.mapred.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SequenceFileFormat implements PailFormat {
     public static final String TYPE_ARG = "compressionType";
@@ -207,19 +206,48 @@ public class SequenceFileFormat implements PailFormat {
     public static class SequenceFilePailInputFormat extends SequenceFileInputFormat<PailRecordInfo, BytesWritable> {
         private Pail _currPail;
 
+        public List<PailInputSplit> withLastSplitInfo(List<PailInputSplit> pailSplits) {
+            PailInputSplit lastSplit = pailSplits.get(0);
+            lastSplit.setIsLastSplit(true);
+            long highestOffset = lastSplit.getStart();
+            for (PailInputSplit pailSplit : pailSplits) {
+                long offset = pailSplit.getStart();
+                if ((offset > highestOffset) && (pailSplit.getPath() == lastSplit.getPath())) {
+                    highestOffset = offset;
+                    lastSplit.setIsLastSplit(false);
+                    lastSplit = pailSplit;
+                    lastSplit.setIsLastSplit(true);
+                }
+            }
+            return pailSplits;
+        }
 
         @Override
         public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
-            List<InputSplit> ret = new ArrayList<InputSplit>();
+            List<PailInputSplit> returnList = new ArrayList<PailInputSplit>();
             Path[] roots = FileInputFormat.getInputPaths(job);
             for(int i=0; i < roots.length; i++) {
                 _currPail = new Pail(roots[i].toString());
                 InputSplit[] splits = super.getSplits(job, numSplits);
+                List<PailInputSplit> ret = new ArrayList<PailInputSplit>();
+                Path splitPath = ((FileSplit)splits[0]).getPath();
+                PailInputSplit pl;
                 for(InputSplit split: splits) {
-                    ret.add(new PailInputSplit(_currPail.getFileSystem(), _currPail.getInstanceRoot(), _currPail.getSpec(), job, (FileSplit) split));
+                    pl = new PailInputSplit(_currPail.getFileSystem(), _currPail.getInstanceRoot(), _currPail.getSpec(), job, (FileSplit) split);
+                    if (pl.getPath() != splitPath)
+                    {
+                        splitPath=pl.getPath();
+                        withLastSplitInfo(ret);
+                        returnList.addAll(ret);
+                        ret = new ArrayList<PailInputSplit>();
+                    }
+                    ret.add(pl);
                 }
+                withLastSplitInfo(ret);
+                returnList.addAll(ret);
             }
-            return ret.toArray(new InputSplit[ret.size()]);
+
+            return returnList.toArray(new InputSplit[returnList.size()]);
         }
 
         @Override
