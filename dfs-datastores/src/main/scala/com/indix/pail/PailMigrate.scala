@@ -1,6 +1,6 @@
 package com.indix.pail
 
-import java.io.IOException
+import java.io.{File, BufferedWriter, FileWriter, IOException}
 import java.util
 
 import com.backtype.hadoop.pail.SequenceFileFormat.SequenceFilePailInputFormat
@@ -15,8 +15,11 @@ import org.apache.hadoop.mapred._
 import org.apache.hadoop.util.{Tool, ToolRunner}
 import org.apache.log4j.Logger
 
+import scala.io.Source
+
 class PailMigrate extends Tool {
   val logger = Logger.getLogger(this.getClass)
+  var configuration: Configuration = null
 
   /*
   * Takes an input pail location, an output pail location and a output pail spec
@@ -42,7 +45,7 @@ class PailMigrate extends Tool {
     val recordType = args("record-type")
     val recordClass = Class.forName(recordType)
 
-    keepSourceFiles = args.boolean("keep-source")
+    val keepSourceFiles = args.getOrElse("keep-source", "true").toBoolean
 
     val targetPailStructure = Class.forName(targetSpecClass).newInstance().asInstanceOf[PailStructure[recordClass.type]]
 
@@ -75,6 +78,20 @@ class PailMigrate extends Tool {
       Thread.sleep(30 * 1000)
     }
 
+    if (!keepSourceFiles) {
+      for (line <- Source.fromFile("pathsToDelete.txt").getLines) {
+        val path = new Path(line)
+        val fs = path.getFileSystem(configuration)
+        logger.info(s"Deleting path $line")
+        val deleteStatus = fs.delete(path, true)
+
+        if (!deleteStatus)
+          logger.warn(s"Deleting $line failed. \n *** Please delete the source manually ***")
+        else
+          logger.info(s"Deleting $line completed successfully.")
+      }
+    }
+
     if (!job.isSuccessful) throw new IOException("Pail Migrate failed")
 
     0 // return success, failures throw an exception anyway!
@@ -82,19 +99,19 @@ class PailMigrate extends Tool {
 
   def getConf: Configuration = configuration
 
-  def setConf(config: Configuration): Unit = { configuration = config }
+  override def setConf(configuration: Configuration): Unit = this.configuration = configuration
 }
 
 object PailMigrate {
   val OUTPUT_STRUCTURE = "pail.migrate.output.structure"
 
-  var configuration: Configuration = null
-  var keepSourceFiles: Boolean = true
+  val bufferedWriter = new BufferedWriter(new FileWriter(new File("pathsToDelete.txt"), true))
 
   class PailMigrateMapper extends Mapper[PailRecordInfo, BytesWritable, Text, BytesWritable] {
     var outputPailStructure: PailStructure[Any] = null
     val logger = Logger.getLogger(this.getClass)
-    val splits : scala.collection.mutable.Set[InputSplit] = scala.collection.mutable.Set[InputSplit]()
+    val splits: scala.collection.mutable.Set[InputSplit] = scala.collection.mutable.Set[InputSplit]()
+
     override def map(key: PailRecordInfo, value: BytesWritable,
                      outputCollector: OutputCollector[Text, BytesWritable],
                      reporter: Reporter): Unit = {
@@ -106,21 +123,13 @@ object PailMigrate {
 
     override def close(): Unit = {
       splits.map(_.asInstanceOf[PailInputSplit]).filter(_.getIsLastSplit).foreach { split =>
-        if (!keepSourceFiles) {
-          val inputFileLocations = split.getLocations
-          inputFileLocations.foreach {
-            p => val path = new Path(p)
-              val fs = path.getFileSystem(configuration)
-              logger.info(s"Deleting path $p")
-              val deleteStatus = fs.delete(path, true)
-
-              if (!deleteStatus)
-                logger.warn(s"Deleting $p failed. \n *** Please delete the source manually ***")
-              else
-                logger.info(s"Deleting $p completed successfully.")
-          }
+        val inputFileLocations = split.getLocations
+        inputFileLocations.foreach {
+          p => val path = new Path(p)
+            bufferedWriter.write(path.toString + "\n")
         }
       }
+      bufferedWriter.close
     }
 
     override def configure(jobConf: JobConf): Unit = {
@@ -135,7 +144,7 @@ object PailMigrate {
     override def configure(jobConf: JobConf): Unit = {}
 
     override def reduce(key: Text, iterator: util.Iterator[BytesWritable], outputCollector: OutputCollector[Text, BytesWritable], reporter: Reporter): Unit = {
-      while(iterator.hasNext)
+      while (iterator.hasNext)
         outputCollector.collect(key, iterator.next())
     }
   }
