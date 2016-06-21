@@ -3,6 +3,7 @@ package com.indix.pail
 import java.io.IOException
 import java.util
 
+import _root_.util.DateHelper
 import com.backtype.hadoop.pail.SequenceFileFormat.SequenceFilePailInputFormat
 import com.backtype.hadoop.pail.{PailOutputFormat, PailRecordInfo, PailStructure}
 import com.backtype.support.Utils
@@ -14,6 +15,7 @@ import org.apache.hadoop.io.{BytesWritable, Text}
 import org.apache.hadoop.mapred._
 import org.apache.hadoop.util.{Tool, ToolRunner}
 import org.apache.log4j.Logger
+import org.joda.time.DateTime
 
 class PailMigrate extends Tool {
   val logger = Logger.getLogger(this.getClass)
@@ -138,4 +140,16 @@ object PailMigrateUtil {
   }
 }
 
+object IxPailArchiver{
+
+  def main(params: Array[String]) = {
+    val lastWeekBucket = DateHelper.weekInterval(new DateTime(System.currentTimeMillis()).minusDays(7))
+    val inputDirLocation = params.indexOf("--input-dir")
+    val path = params(inputDirLocation+1)
+    val lastWeekPath = path + lastWeekBucket
+    params(inputDirLocation+1) = lastWeekPath
+    ToolRunner.run(new Configuration(), new PailMigrate, params)
+
+  }
+}
 
