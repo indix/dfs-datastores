@@ -127,7 +127,7 @@ object PailMigrate {
     override def configure(jobConf: JobConf): Unit = {}
 
     override def reduce(key: Text, iterator: util.Iterator[BytesWritable], outputCollector: OutputCollector[Text, BytesWritable], reporter: Reporter): Unit = {
-      while(iterator.hasNext)
+      while (iterator.hasNext)
         outputCollector.collect(key, iterator.next())
     }
   }
@@ -140,15 +140,23 @@ object PailMigrateUtil {
   }
 }
 
-object IxPailArchiver{
+object IxPailArchiver {
+  val logger = Logger.getLogger(this.getClass)
 
   def main(params: Array[String]) = {
     val lastWeekBucket = DateHelper.weekInterval(new DateTime(System.currentTimeMillis()).minusDays(7))
-    val inputDirLocation = params.indexOf("--input-dir")
-    val path = params(inputDirLocation+1)
+    val inputDirLocation = params.indexOf("--base-input-dir")
+    val path = params(inputDirLocation + 1)
     val lastWeekPath = path + lastWeekBucket
-    params(inputDirLocation+1) = lastWeekPath
-    ToolRunner.run(new Configuration(), new PailMigrate, params)
+
+    val inputDirPath: Path = new Path(lastWeekPath)
+    val fs = inputDirPath.getFileSystem(new Configuration())
+
+    fs.exists(inputDirPath) match {
+      case true => val newParams = params ++ Array("--input-dir", lastWeekPath)
+        ToolRunner.run(new Configuration(), new PailMigrate, newParams)
+      case false => logger.info("The following location doesn't exist:" + inputDirPath)
+    }
 
   }
 }
