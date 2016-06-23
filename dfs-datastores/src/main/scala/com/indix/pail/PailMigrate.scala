@@ -143,7 +143,7 @@ object PailMigrateUtil {
 object IxPailArchiver {
   val logger = Logger.getLogger(this.getClass)
 
-  def main(params: Array[String]) = {
+  def main(params: Array[String]) {
 
     val lastWeekBucket = DateHelper.weekInterval(new DateTime(System.currentTimeMillis()).minusDays(7))
 
