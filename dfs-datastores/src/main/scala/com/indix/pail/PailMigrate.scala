@@ -144,18 +144,21 @@ object IxPailArchiver {
   val logger = Logger.getLogger(this.getClass)
 
   def main(params: Array[String]) = {
+
     val lastWeekBucket = DateHelper.weekInterval(new DateTime(System.currentTimeMillis()).minusDays(7))
-    val inputDirLocation = params.indexOf("--base-input-dir")
-    val path = params(inputDirLocation + 1)
-    val lastWeekPath = path + lastWeekBucket
 
-    val inputDirPath: Path = new Path(lastWeekPath)
-    val fs = inputDirPath.getFileSystem(new Configuration())
+    val args = Args(params)
+    val baseInputDir = args("--base-input-dir")
 
-    fs.exists(inputDirPath) match {
-      case true => val newParams = params ++ Array("--input-dir", lastWeekPath)
-        ToolRunner.run(new Configuration(), new PailMigrate, newParams)
-      case false => logger.info("The following location doesn't exist:" + inputDirPath)
+    val inputDirPath: Path = new Path(baseInputDir, lastWeekBucket)
+    val configuration = new Configuration()
+    val fs = inputDirPath.getFileSystem(configuration)
+
+    if (fs.exists(inputDirPath)) {
+      val newParams = params ++ Array("--input-dir", inputDirPath.toString)
+      ToolRunner.run(configuration, new PailMigrate, newParams)
+    } else {
+      logger.info("The following location doesn't exist:" + inputDirPath)
     }
 
   }
