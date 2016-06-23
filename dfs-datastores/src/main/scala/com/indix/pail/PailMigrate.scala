@@ -3,6 +3,7 @@ package com.indix.pail
 import java.io.IOException
 import java.util
 
+import _root_.util.DateHelper
 import com.backtype.hadoop.pail.SequenceFileFormat.SequenceFilePailInputFormat
 import com.backtype.hadoop.pail.{PailOutputFormat, PailRecordInfo, PailStructure}
 import com.backtype.support.Utils
@@ -14,6 +15,7 @@ import org.apache.hadoop.io.{BytesWritable, Text}
 import org.apache.hadoop.mapred._
 import org.apache.hadoop.util.{Tool, ToolRunner}
 import org.apache.log4j.Logger
+import org.joda.time.DateTime
 
 class PailMigrate extends Tool {
   val logger = Logger.getLogger(this.getClass)
@@ -125,7 +127,7 @@ object PailMigrate {
     override def configure(jobConf: JobConf): Unit = {}
 
     override def reduce(key: Text, iterator: util.Iterator[BytesWritable], outputCollector: OutputCollector[Text, BytesWritable], reporter: Reporter): Unit = {
-      while(iterator.hasNext)
+      while (iterator.hasNext)
         outputCollector.collect(key, iterator.next())
     }
   }
@@ -138,4 +140,27 @@ object PailMigrateUtil {
   }
 }
 
+object IxPailArchiver {
+  val logger = Logger.getLogger(this.getClass)
+
+  def main(params: Array[String]) = {
+
+    val lastWeekBucket = DateHelper.weekInterval(new DateTime(System.currentTimeMillis()).minusDays(7))
+
+    val args = Args(params)
+    val baseInputDir = args("base-input-dir")
+
+    val inputDirPath: Path = new Path(baseInputDir, lastWeekBucket)
+    val configuration = new Configuration()
+    val fs = inputDirPath.getFileSystem(configuration)
+
+    if (fs.exists(inputDirPath)) {
+      val newParams = params ++ Array("--input-dir", inputDirPath.toString)
+      ToolRunner.run(configuration, new PailMigrate, newParams)
+    } else {
+      logger.info("The following location doesn't exist:" + inputDirPath)
+    }
+
+  }
+}
 
