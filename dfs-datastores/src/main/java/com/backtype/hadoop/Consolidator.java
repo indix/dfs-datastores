@@ -144,6 +144,30 @@ public class Consolidator {
         }
     }
 
+    public static void consolidateNonMR(FileSystem fs, RecordStreamFactory streams, PathLister lister, List<String> dirs,
+                                        long targetSizeBytes, String extension, PailStructure<?> structure, String rootDir) throws IOException {
+        JobConf conf = new JobConf(fs.getConf(), Consolidator.class);
+        String fsUri = fs.getUri().toString();
+        ConsolidatorArgs args = new ConsolidatorArgs(fsUri, streams, lister, dirs, targetSizeBytes, extension, structure, rootDir);
+        Utils.setObject(conf, ARGS, args);
+
+        ConsolidatorMapper consolidateMapper = new ConsolidatorMapper();
+        consolidateMapper.configure(conf);
+
+        int USELESS = 0;
+        InputSplit[] inputSplits = new ConsolidatorInputFormat().getSplits(conf, USELESS);
+        OutputCollector<NullWritable, NullWritable> oc = null;
+
+        for(InputSplit inputSplit: inputSplits) {
+            ConsolidatorRecordReader consolidatorRecordReader = new ConsolidatorRecordReader((ConsolidatorSplit) inputSplit);
+            ArrayWritable k = consolidatorRecordReader.createKey();
+            Text v = consolidatorRecordReader.createValue();
+            consolidatorRecordReader.next(k, v);
+            consolidateMapper.map(k, v, oc, Reporter.NULL);
+        }
+    }
+
+
     private static void registerShutdownHook() {
         shutdownHook = new Thread()
         {
