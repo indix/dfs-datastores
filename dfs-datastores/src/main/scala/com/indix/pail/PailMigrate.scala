@@ -145,7 +145,7 @@ object IxPailArchiver {
 
   def main(params: Array[String]) {
 
-    val lastWeekBucket = DateHelper.weekInterval(new DateTime(System.currentTimeMillis()).minusDays(7))
+    val lastWeekBucket = DateHelper.weekInterval(new DateTime(System.currentTimeMillis()).minusDays(14))
 
     val args = Args(params)
     val baseInputDir = args("base-input-dir")
