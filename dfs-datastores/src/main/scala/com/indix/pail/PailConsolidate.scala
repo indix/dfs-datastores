@@ -9,7 +9,7 @@ import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import util.{DateTimeFormatter, DateHelper}
 
-class PailConsolidate(inputDir: String, subDir: String, pipelineLabel: String)  {
+class PailConsolidate(inputDir: String, subDir: String, pipelineLabel: String, nonMRConsolidation: Boolean = false)  {
   val logger = LoggerFactory.getLogger(this.getClass)
 
   def conf: Configuration = new Configuration()
@@ -22,12 +22,17 @@ class PailConsolidate(inputDir: String, subDir: String, pipelineLabel: String)  
     pail.consolidate()
   }
 
+  def consolidateUsingPailNonMR(fileSystem: FileSystem, consolidationDir: String): Unit = {
+    val pail = Pail.create(fileSystem, consolidationDir, false)
+    pail.consolidateNonMR()
+  }
+
   def run() = {
     try {
       logger.info("Starting consolidate... " + subDir + " Aquiring write lock on " + inputDir)
       val fileSystem = new Path(subDir).getFileSystem(conf)
       writeLock.acquire()
-      consolidateUsingPail(fileSystem, subDir)
+      if(nonMRConsolidation) consolidateUsingPailNonMR(fileSystem, subDir) else consolidateUsingPail(fileSystem, subDir)
       logger.info("Consolidate done.")
     } finally {
       writeLock.release()
@@ -38,12 +43,14 @@ class PailConsolidate(inputDir: String, subDir: String, pipelineLabel: String)  
 object PailConsolidate {
   def main(args: Array[String]) = {
     if (args.length < 1) {
-      println("Usage: java -cp <jar> PailConsolidate /root/dir/to/consolidate")
+      println("Usage: java -cp <jar> PailConsolidate /root/dir/to/consolidate [singleNodeConsolidation: true or false]")
       System.exit(1)
     }
 
-    val pailConsolidate = new PailConsolidate(args(0), args(0), Option(System.getenv("GO_PIPELINE_LABEL")).filter(_.nonEmpty).getOrElse("MANUAL"))
+    val isSingleNodeConsolidation = if(args.length == 2) args(1).toBoolean else false
+    val pailConsolidate = new PailConsolidate(args(0), args(0), Option(System.getenv("GO_PIPELINE_LABEL")).filter(_.nonEmpty).getOrElse("MANUAL"), isSingleNodeConsolidation)
     pailConsolidate.run()
+
   }
 }
 

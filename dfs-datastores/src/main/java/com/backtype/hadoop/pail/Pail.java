@@ -499,6 +499,10 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
         consolidate(Consolidator.DEFAULT_CONSOLIDATION_SIZE);
     }
 
+    public void consolidateNonMR() throws IOException {
+        consolidateNonMR(Consolidator.DEFAULT_CONSOLIDATION_SIZE);
+    }
+
     public void consolidate(long maxSize) throws IOException {
         List<String> toCheck = new ArrayList<String>();
         toCheck.add("");
@@ -525,6 +529,35 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
         }
 
         Consolidator.consolidate(_fs, _format, new PailPathLister(false), consolidatedirs, maxSize, EXTENSION, structure, getRoot());
+    }
+
+
+    public void consolidateNonMR(long maxSize) throws IOException {
+        List<String> toCheck = new ArrayList<String>();
+        toCheck.add("");
+        PailStructure structure = getSpec().getStructure();
+        List<String> consolidatedirs = new ArrayList<String>();
+        consolidatedirs.add(toFullPath(""));
+        while(toCheck.size()>0) {
+            String dir = toCheck.remove(0);
+            List<String> dirComponents = componentsFromRoot(dir);
+            if(!structure.isValidTarget(dirComponents.toArray(new String[dirComponents.size()]))) {
+                FileStatus[] contents = listStatus(new Path(toFullPath(dir)));
+                for(FileStatus f: contents) {
+                    if(!f.isDir()) {
+                        if(f.getPath().toString().endsWith(EXTENSION))
+                            throw new IllegalStateException(f.getPath().toString() + " is not a dir and breaks the structure of " + getInstanceRoot());
+                    } else {
+                        String newDir;
+                        if(dir.length()==0) newDir = f.getPath().getName();
+                        else newDir = dir + "/" + f.getPath().getName();
+                        toCheck.add(newDir);
+                    }
+                }
+            }
+        }
+
+        Consolidator.consolidateNonMR(_fs, _format, new PailPathLister(false), consolidatedirs, maxSize, EXTENSION, structure, getRoot());
     }
 
     @Override
