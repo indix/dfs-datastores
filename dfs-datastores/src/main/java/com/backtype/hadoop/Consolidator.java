@@ -401,7 +401,7 @@ public class Consolidator {
             return results;
         }
 
-        private String getParent(PailStructure<?> structure, Path path, String pailRoot) {
+        public String getParent(PailStructure<?> structure, Path path, String pailRoot) {
             Path lastParentPath = path;
 
             boolean isValid = true;
@@ -412,12 +412,10 @@ public class Consolidator {
                 withinPailRoot = !relative.equals("");
                 isValid = withinPailRoot ?
                         structure.isValidTarget(Utils.componentize(relative).toArray(new String[0])) :
-                        structure.isValidTarget(relative);
-                // System.out.println("isValid - " + tempParent.toString() + " is " + isValid);
+                        structure.isValidTarget(new String[0]);
                 if(isValid) lastParentPath = tempParent;
             }
 
-            // System.out.println("Returning parent for " + path + " as " + lastParentPath);
             return lastParentPath.toString();
         }
 

@@ -109,6 +109,24 @@ public class PailOpsTest extends FSTestCase {
         assertEquals("lalala", pail.getMetadata("a/b/qqq"));
     }
 
+    public void testConsolidationSinglePath() throws IOException {
+        String path = getTmpPath(local, "singlepath_pail");
+        Pail<String> pail = Pail.create(local, path, new SingleTargetTestStructure());
+        Pail<String>.TypedRecordOutputStream os = pail.openWrite();
+        os.writeObject("bde");
+        os.close();
+        os = pail.openWrite();
+        os.writeObject("bef");
+        os.close();
+        List<Path> filesBeforeConsolidation = pail.getStoredFiles();
+        assertEquals(filesBeforeConsolidation.size(), 2);
+        pail.consolidate();
+        List<Path> filesAfterConsolidation = pail.getStoredFiles();
+        assertEquals(filesAfterConsolidation.size(), 1);
+        Path finalConsolidateFilePath = filesAfterConsolidation.get(0);
+        assertEquals(finalConsolidateFilePath.getParent().getParent().getName(), "b");
+    }
+
     public void testConsolidationMany() throws Exception {
         String path = getTmpPath(local, "pail");
         Pail pail = Pail.create(local, path);
