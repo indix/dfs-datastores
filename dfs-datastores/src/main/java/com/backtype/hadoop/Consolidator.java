@@ -388,7 +388,7 @@ public class Consolidator {
         private Map<String, List<Path>> groupByParentPaths(PailStructure structure, List<Path> files, String pailRoot) {
             HashMap<String, List<Path>> results = new HashMap<String, List<Path>>();
             for (Path file : files) {
-                String parentLocation = getParent(structure, file, pailRoot);
+                String parentLocation = Utils.getParent(structure, file, pailRoot);
                 if (results.containsKey(parentLocation)) {
                     results.get(parentLocation).add(file);
                 } else {
@@ -399,24 +399,6 @@ public class Consolidator {
             }
 
             return results;
-        }
-
-        public String getParent(PailStructure<?> structure, Path path, String pailRoot) {
-            Path lastParentPath = path;
-
-            boolean isValid = true;
-            boolean withinPailRoot = true;
-            while (lastParentPath.getParent() != null && isValid && withinPailRoot) {
-                Path tempParent = lastParentPath.getParent();
-                String relative = Utils.makeRelative(new Path(pailRoot), tempParent);
-                withinPailRoot = !relative.equals("");
-                isValid = withinPailRoot ?
-                        structure.isValidTarget(Utils.componentize(relative).toArray(new String[0])) :
-                        structure.isValidTarget(new String[0]);
-                if(isValid) lastParentPath = tempParent;
-            }
-
-            return lastParentPath.toString();
         }
 
         private List<InputSplit> createSplits(FileSystem fs, List<Path> files,

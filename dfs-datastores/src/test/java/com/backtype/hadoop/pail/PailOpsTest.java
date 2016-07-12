@@ -109,9 +109,9 @@ public class PailOpsTest extends FSTestCase {
         assertEquals("lalala", pail.getMetadata("a/b/qqq"));
     }
 
-    public void testConsolidationSinglePath() throws IOException {
-        String path = getTmpPath(local, "singlepath_pail");
-        Pail<String> pail = Pail.create(local, path, new SingleTargetTestStructure());
+    public void testConsolidationSinglePartition() throws IOException {
+        String path = getTmpPath(local, "singlepartition_pail");
+        Pail<String> pail = Pail.create(local, path, new SinglePartitionTargetTestStructure());
         Pail<String>.TypedRecordOutputStream os = pail.openWrite();
         os.writeObject("bde");
         os.close();

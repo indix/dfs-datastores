@@ -4,10 +4,10 @@ package com.backtype.hadoop.pail;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SingleTargetTestStructure implements PailStructure<String> {
+public class SinglePartitionTargetTestStructure implements PailStructure<String> {
 
     public boolean isValidTarget(String... dirs) {
-            return dirs != null & dirs.length >= 1;
+            return dirs != null && dirs.length >= 1;
     }
 
     public String deserialize(byte[] serialized) {

@@ -1,5 +1,6 @@
 package com.backtype.support;
 
+import com.backtype.hadoop.pail.PailStructure;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -165,6 +166,24 @@ public class Utils {
         } catch(InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static String getParent(PailStructure<?> structure, Path path, String pailRoot) {
+        Path lastParentPath = path;
+
+        boolean isValid = true;
+        boolean withinPailRoot = true;
+        while (lastParentPath.getParent() != null && isValid && withinPailRoot) {
+            Path tempParent = lastParentPath.getParent();
+            String relative = Utils.makeRelative(new Path(pailRoot), tempParent);
+            withinPailRoot = !relative.equals("");
+            isValid = withinPailRoot ?
+                    structure.isValidTarget(Utils.componentize(relative).toArray(new String[0])) :
+                    structure.isValidTarget(new String[0]);
+            if(isValid) lastParentPath = tempParent;
+        }
+
+        return lastParentPath.toString();
     }
 
     public static boolean firstNBytesSame(FileSystem fs1, Path p1, FileSystem fs2, Path p2, long n) throws IOException {

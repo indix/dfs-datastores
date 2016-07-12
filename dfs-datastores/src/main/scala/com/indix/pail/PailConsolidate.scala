@@ -9,7 +9,7 @@ import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import util.{DateTimeFormatter, DateHelper}
 
-class PailConsolidate(inputDir: String, subDir: String, pipelineLabel: String, singleNodeConsolidation: Boolean = false)  {
+class PailConsolidate(inputDir: String, subDir: String, pipelineLabel: String, nonMRConsolidation: Boolean = false)  {
   val logger = LoggerFactory.getLogger(this.getClass)
 
   def conf: Configuration = new Configuration()
@@ -32,7 +32,7 @@ class PailConsolidate(inputDir: String, subDir: String, pipelineLabel: String, s
       logger.info("Starting consolidate... " + subDir + " Aquiring write lock on " + inputDir)
       val fileSystem = new Path(subDir).getFileSystem(conf)
       writeLock.acquire()
-      if(singleNodeConsolidation) consolidateUsingPailNonMR(fileSystem, subDir) else consolidateUsingPail(fileSystem, subDir)
+      if(nonMRConsolidation) consolidateUsingPailNonMR(fileSystem, subDir) else consolidateUsingPail(fileSystem, subDir)
       logger.info("Consolidate done.")
     } finally {
       writeLock.release()
