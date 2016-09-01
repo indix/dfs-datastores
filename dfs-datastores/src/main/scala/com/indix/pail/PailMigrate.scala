@@ -50,7 +50,13 @@ class PailMigrate extends Tool {
     val targetPailStructure = Class.forName(targetSpecClass).newInstance().asInstanceOf[PailStructure[recordClass.type]]
 
     val jobConf = new JobConf(getConf)
+    // FIXME Make pool and priority configurable
     jobConf.setJobName("Pail Migration job (from one scheme to another)")
+    jobConf.set("mapred.fairscheduler.pool", "hadoop")
+    jobConf.setJobPriority(JobPriority.VERY_HIGH)
+
+    val path: Path = new Path(inputDir)
+    val fs = path.getFileSystem(getConf)
 
     jobConf.setInputFormat(classOf[SequenceFilePailInputFormat])
     FileInputFormat.addInputPath(jobConf, new Path(inputDir))
@@ -79,9 +85,6 @@ class PailMigrate extends Tool {
     }
 
     if (!job.isSuccessful) throw new IOException("Pail Migrate failed")
-
-    val path: Path = new Path(inputDir)
-    val fs = path.getFileSystem(getConf)
 
     if (!keepSourceFiles) {
       logger.info(s"Deleting path ${inputDir}")
