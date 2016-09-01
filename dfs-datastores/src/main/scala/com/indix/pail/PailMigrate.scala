@@ -58,6 +58,11 @@ class PailMigrate extends Tool {
     val path: Path = new Path(inputDir)
     val fs = path.getFileSystem(getConf)
 
+    if(!fs.exists(path)) {
+      logger.warn("Input directory is not valid/found. Could be migrated or due to a invalid path")
+      return 0
+    }
+
     jobConf.setInputFormat(classOf[SequenceFilePailInputFormat])
     FileInputFormat.addInputPath(jobConf, new Path(inputDir))
 
