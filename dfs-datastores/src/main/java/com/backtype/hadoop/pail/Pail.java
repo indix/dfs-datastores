@@ -232,7 +232,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
 
     private PailFormat _format;
     private PailSpec _spec;
-    private PailStructure<T> _structure;
+    public PailStructure<T> _structure;
     private String _root;
     private FileSystem _fs;
 

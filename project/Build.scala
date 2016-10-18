@@ -9,7 +9,7 @@ object Build extends Build {
 
     crossPaths := false,
 
-    javacOptions ++= Seq("-source", "1.6", "-target", "1.7"),
+    javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
     javacOptions in doc := Seq("-source", "1.7"),
 
     libraryDependencies ++= Seq(
@@ -31,10 +31,12 @@ object Build extends Build {
 
     scalaVersion := ScalaVersion,
 
+    sources in (Compile, doc) <<= sources in (Compile, doc) map { _.filterNot(_.getName endsWith ".scala") },
+
     // Publishing options:
     publishMavenStyle := true,
 
-    publishArtifact in (Compile, packageDoc) := false,
+    publishArtifact in (Compile, packageDoc) := true,
 
     publishArtifact in Test := false,
 
@@ -82,12 +84,11 @@ object Build extends Build {
       </developers>)
   )
 
-  lazy val bundle = Project(
-    id = "bundle",
+  lazy val root = Project(
+    id = "root",
     base = file("."),
     settings = sharedSettings
   ).settings(
-//    test := { },
     publish := { }, // skip publishing for this root project.
     publishLocal := { }
   ).aggregate(core, cascading)
