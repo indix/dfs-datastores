@@ -1,1 +1,1 @@
-version in ThisBuild := "1.6.23-indix"
+version in ThisBuild := sys.env.getOrElse("PIPELINE_LABEL", "0.2-SNAPSHOT")

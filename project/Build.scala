@@ -5,7 +5,7 @@ object Build extends Build {
   val ScalaVersion = "2.10.4"
 
   val sharedSettings = Project.defaultSettings ++ Seq(
-    organization := "com.backtype",
+    organization := "com.indix",
 
     crossPaths := false,
 
@@ -40,20 +40,18 @@ object Build extends Build {
 
     pomIncludeRepository := { x => false },
 
-    publishTo <<= version {
-      (v: String) =>
-        if (v.trim.endsWith("SNAPSHOT"))
-          Some("Indix Snapshot Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-snapshot-local")
-        else
-          Some("Indix Release Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-release-local")
+    publishTo := {
+      val nexus = "https://oss.sonatype.org/"
+      if (isSnapshot.value)
+        Some("snapshots" at nexus + "content/repositories/snapshots")
+      else
+        Some("releases"  at nexus + "service/local/staging/deploy/maven2")
     },
-
-    //publishTo := Some(Resolver.file("file",  new File( Path.userHome.absolutePath + "/mvn_repo/repository/releases" )) ),
 
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-q", "-v"),
 
     pomExtra := (
-      <url>https://github.com/nathanmarz/dfs-datastores</url>
+      <url>https://github.com/indix/dfs-datastores</url>
       <licenses>
         <license>
           <name>Eclipse Public License</name>
