@@ -1,4 +1,4 @@
-[![Build Status](https://snap-ci.com/ind9/dfs-datastores/branch/develop/build_image)](https://snap-ci.com/ind9/dfs-datastores/branch/develop)
+[![Build Status](https://snap-ci.com/indix/dfs-datastores/branch/master/build_image)](https://snap-ci.com/indix/dfs-datastores/branch/master)
 
 # dfs-datastores
 
