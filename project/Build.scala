@@ -107,8 +107,8 @@ object Build extends Build {
       "org.apache.hadoop" % "hadoop-core" % "2.0.0-mr1-cdh4.2.1" % "test",
       "com.hadoop.gplcompression" % "hadoop-lzo" % "0.4.15",
       "org.scalatest" %% "scalatest" % "2.2.0" % "test",
-      "com.twitter" % "scalding-args_2.10" % "0.15.0",
-      "org.scalaj" % "scalaj-time_2.9.2" % "0.6",
+      "com.twitter" %% "scalding-args" % "0.15.0",
+      "org.scalaj" % "scalaj-time" % "0.7",
       "org.apache.commons" % "commons-lang3" % "3.1"
     ).map(_.exclude("commons-daemon", "commons-daemon"))
   )
