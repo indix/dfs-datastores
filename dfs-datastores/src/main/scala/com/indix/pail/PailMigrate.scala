@@ -8,7 +8,7 @@ import com.backtype.hadoop.pail.SequenceFileFormat.SequenceFilePailInputFormat
 import com.backtype.hadoop.pail.{PailOutputFormat, PailRecordInfo, PailStructure}
 import com.backtype.support.Utils
 import com.indix.pail.PailMigrate._
-import com.twitter.scalding.Args
+import org.apache.commons.cli.{Options, PosixParser}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{BytesWritable, Text}
@@ -17,7 +17,7 @@ import org.apache.hadoop.util.{Tool, ToolRunner}
 import org.apache.log4j.Logger
 import org.joda.time.DateTime
 
-class PailMigrate extends Tool {
+class PailMigrate extends Tool with ArgsParser {
   val logger = Logger.getLogger(this.getClass)
   var configuration: Configuration = null
 
@@ -32,20 +32,20 @@ class PailMigrate extends Tool {
   * OutputFormat - PailOutputFormat - needs a PailSpec
   * */
 
-  override def run(arguments: Array[String]): Int = {
+  override def run(args: Array[String]): Int = {
 
-    val args = Args(arguments)
+    implicit val cli = new PosixParser().parse(options, args)
 
-    val inputDir = args("input-dir")
+    val inputDir = cmdArgs("input-dir")
 
-    val outputDir = args("output-dir")
+    val outputDir = cmdArgs("output-dir")
 
-    val targetSpecClass = args("target-pail-spec")
+    val targetSpecClass = cmdArgs("target-pail-spec")
 
-    val recordType = args("record-type")
+    val recordType = cmdArgs("record-type")
     val recordClass = Class.forName(recordType)
 
-    val keepSourceFiles = args.boolean("keep-source")
+    val keepSourceFiles = cmdArgs("keep-source").toBoolean
 
     val targetPailStructure = Class.forName(targetSpecClass).newInstance().asInstanceOf[PailStructure[recordClass.type]]
 
@@ -92,13 +92,13 @@ class PailMigrate extends Tool {
     if (!job.isSuccessful) throw new IOException("Pail Migrate failed")
 
     if (!keepSourceFiles) {
-      logger.info(s"Deleting path ${inputDir}")
+      logger.info(s"Deleting path $inputDir")
       val deleteStatus = fs.delete(path, true)
 
       if (!deleteStatus)
-        logger.warn(s"Deleting ${inputDir} failed. \n *** Please delete the source manually ***")
+        logger.warn(s"Deleting $inputDir failed. \n *** Please delete the source manually ***")
       else
-        logger.info(s"Deleting ${inputDir} completed successfully.")
+        logger.info(s"Deleting $inputDir completed successfully.")
     }
 
     0 // return success, failures throw an exception anyway!
@@ -107,6 +107,16 @@ class PailMigrate extends Tool {
   override def getConf: Configuration = configuration
 
   override def setConf(configuration: Configuration): Unit = this.configuration = configuration
+
+  override val options = {
+    val cmdOptions = new Options()
+    cmdOptions.addOption("i", "input-dir", true, "Input Directory")
+    cmdOptions.addOption("o", "output-dir", true, "Output Directory")
+    cmdOptions.addOption("t", "target-pail-spec", true, "Target Pail Spec")
+    cmdOptions.addOption("r", "record-type", true, "Record Type")
+    cmdOptions.addOption("k", "keep-source", false, "Keep Source")
+    cmdOptions
+  }
 }
 
 object PailMigrate {
@@ -148,27 +158,32 @@ object PailMigrateUtil {
   }
 }
 
-object IxPailArchiver {
+object IxPailArchiver extends ArgsParser {
   val logger = Logger.getLogger(this.getClass)
 
-  def main(params: Array[String]) {
+  def main(args: Array[String]) {
 
     val lastWeekBucket = DateHelper.weekInterval(new DateTime(System.currentTimeMillis()).minusDays(14))
-
-    val args = Args(params)
-    val baseInputDir = args("base-input-dir")
+    implicit val cli = new PosixParser().parse(options, args)
+    val baseInputDir = cmdArgs("base-input-dir")
 
     val inputDirPath: Path = new Path(baseInputDir, lastWeekBucket)
     val configuration = new Configuration()
     val fs = inputDirPath.getFileSystem(configuration)
 
     if (fs.exists(inputDirPath)) {
-      val newParams = params ++ Array("--input-dir", inputDirPath.toString)
+      val newParams = args ++ Array("--input-dir", inputDirPath.toString)
       ToolRunner.run(configuration, new PailMigrate, newParams)
     } else {
       logger.info("The following location doesn't exist:" + inputDirPath)
     }
 
+  }
+
+  override val options: Options = {
+    val cmdOptions = new Options()
+    cmdOptions.addOption("i", "base-input-dir", true, "Input Directory")
+    cmdOptions
   }
 }
 

@@ -2,12 +2,13 @@ package com.indix.pail
 
 import com.backtype.hadoop.pail.Pail
 import com.indix.commons.FSUtils
-import com.twitter.scalding.Args
+import org.apache.commons.cli.{Options, PosixParser}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
-import util.{DateTimeFormatter, DateHelper}
+import util.{DateHelper, DateTimeFormatter}
+
 
 class PailConsolidate(inputDir: String, subDir: String, pipelineLabel: String, nonMRConsolidation: Boolean = false)  {
   val logger = LoggerFactory.getLogger(this.getClass)
@@ -54,16 +55,16 @@ object PailConsolidate {
   }
 }
 
-object IxPailConsolidator extends FSUtils {
+object IxPailConsolidator extends FSUtils with ArgsParser {
   def conf: Configuration = new Configuration()
 
-  def main(argumentArr: Array[String]) = {
-    val args = Args(argumentArr)
-    val pailRoot = args("input-dir").stripSuffix("/")
+  def main(args: Array[String]) = {
+    implicit val cli = new PosixParser().parse(options, args)
+    val pailRoot = cmdArgs("input-dir")
     val pipelineFromEnv = Option(System.getenv("GO_PIPELINE_LABEL")).filter(_.nonEmpty).getOrElse("MANUAL")
-    val pipelineLabel = args.getOrElse("pipeline", pipelineFromEnv)
-    val numTimePartitionUnitsToCover = args.getOrElse("num-partition-units", "2").toInt
-    val strategy = args.getOrElse("strategy", "all")
+    val pipelineLabel = cmdOptionalArgs("pipeline").getOrElse(pipelineFromEnv)
+    val numTimePartitionUnitsToCover = cmdOptionalArgs("num-partition-units").getOrElse("2").toInt
+    val strategy = cmdOptionalArgs("strategy").getOrElse("all")
     val thisMoment = DateTime.now()
 
     def getSubDirToProcess(strategy: String, thisMoment: DateTime, i: Int) = strategy match {
@@ -74,10 +75,21 @@ object IxPailConsolidator extends FSUtils {
       case _ => throw new RuntimeException("Unsupported strategy. Supported ones are: hourly|daily|weekly|all")
     }
 
-    val dirsToConsolidate = (0 to numTimePartitionUnitsToCover - 1).map { i =>
+    val dirsToConsolidate = (0 until numTimePartitionUnitsToCover).map { i =>
       pailRoot + "/" + getSubDirToProcess(strategy, thisMoment, i)
     }.filter(exists).toSet
 
     dirsToConsolidate.foreach { subDirToProcess => new PailConsolidate(pailRoot, subDirToProcess, pipelineLabel).run() }
   }
+
+  override val options = {
+    val cmdOptions = new Options()
+    cmdOptions.addOption("i", "input-dir", true, "Input Directory")
+    cmdOptions.addOption("p", "pipeline", true, "Pipeline")
+    cmdOptions.addOption("n", "num-parittion-units", true, "Number of Partition Units")
+    cmdOptions.addOption("s", "strategy", true, "Pail Strategy")
+    cmdOptions
+  }
+
+
 }
