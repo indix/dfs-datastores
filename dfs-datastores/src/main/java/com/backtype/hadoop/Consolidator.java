@@ -144,6 +144,30 @@ public class Consolidator {
         }
     }
 
+    public static void consolidateNonMR(FileSystem fs, RecordStreamFactory streams, PathLister lister, List<String> dirs,
+                                        long targetSizeBytes, String extension, PailStructure<?> structure, String rootDir) throws IOException {
+        JobConf conf = new JobConf(fs.getConf(), Consolidator.class);
+        String fsUri = fs.getUri().toString();
+        ConsolidatorArgs args = new ConsolidatorArgs(fsUri, streams, lister, dirs, targetSizeBytes, extension, structure, rootDir);
+        Utils.setObject(conf, ARGS, args);
+
+        ConsolidatorMapper consolidateMapper = new ConsolidatorMapper();
+        consolidateMapper.configure(conf);
+
+        int USELESS = 0;
+        InputSplit[] inputSplits = new ConsolidatorInputFormat().getSplits(conf, USELESS);
+        OutputCollector<NullWritable, NullWritable> oc = null;
+
+        for(InputSplit inputSplit: inputSplits) {
+            ConsolidatorRecordReader consolidatorRecordReader = new ConsolidatorRecordReader((ConsolidatorSplit) inputSplit);
+            ArrayWritable k = consolidatorRecordReader.createKey();
+            Text v = consolidatorRecordReader.createValue();
+            consolidatorRecordReader.next(k, v);
+            consolidateMapper.map(k, v, oc, Reporter.NULL);
+        }
+    }
+
+
     private static void registerShutdownHook() {
         shutdownHook = new Thread()
         {
@@ -364,7 +388,7 @@ public class Consolidator {
         private Map<String, List<Path>> groupByParentPaths(PailStructure structure, List<Path> files, String pailRoot) {
             HashMap<String, List<Path>> results = new HashMap<String, List<Path>>();
             for (Path file : files) {
-                String parentLocation = getParent(structure, file, pailRoot);
+                String parentLocation = Utils.getParent(structure, file, pailRoot);
                 if (results.containsKey(parentLocation)) {
                     results.get(parentLocation).add(file);
                 } else {
@@ -375,26 +399,6 @@ public class Consolidator {
             }
 
             return results;
-        }
-
-        private String getParent(PailStructure<?> structure, Path path, String pailRoot) {
-            Path lastParentPath = path;
-
-            boolean isValid = true;
-            boolean withinPailRoot = true;
-            while (lastParentPath.getParent() != null && isValid && withinPailRoot) {
-                Path tempParent = lastParentPath.getParent();
-                String relative = Utils.makeRelative(new Path(pailRoot), tempParent);
-                withinPailRoot = !relative.equals("");
-                isValid = withinPailRoot ?
-                        structure.isValidTarget(Utils.componentize(relative).toArray(new String[0])) :
-                        structure.isValidTarget(relative);
-                // System.out.println("isValid - " + tempParent.toString() + " is " + isValid);
-                if(isValid) lastParentPath = tempParent;
-            }
-
-            // System.out.println("Returning parent for " + path + " as " + lastParentPath);
-            return lastParentPath.toString();
         }
 
         private List<InputSplit> createSplits(FileSystem fs, List<Path> files,

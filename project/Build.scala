@@ -5,11 +5,11 @@ object Build extends Build {
   val ScalaVersion = "2.10.4"
 
   val sharedSettings = Project.defaultSettings ++ Seq(
-    organization := "com.backtype",
+    organization := "com.indix",
 
     crossPaths := false,
 
-    javacOptions ++= Seq("-source", "1.6", "-target", "1.7"),
+    javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
     javacOptions in doc := Seq("-source", "1.7"),
 
     libraryDependencies ++= Seq(
@@ -31,29 +31,29 @@ object Build extends Build {
 
     scalaVersion := ScalaVersion,
 
+    sources in (Compile, doc) <<= sources in (Compile, doc) map { _.filterNot(_.getName endsWith ".scala") },
+
     // Publishing options:
     publishMavenStyle := true,
 
-    publishArtifact in (Compile, packageDoc) := false,
+    publishArtifact in (Compile, packageDoc) := true,
 
     publishArtifact in Test := false,
 
     pomIncludeRepository := { x => false },
 
-    publishTo <<= version {
-      (v: String) =>
-        if (v.trim.endsWith("SNAPSHOT"))
-          Some("Indix Snapshot Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-snapshot-local")
-        else
-          Some("Indix Release Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-release-local")
+    publishTo := {
+      val nexus = "https://oss.sonatype.org/"
+      if (isSnapshot.value)
+        Some("snapshots" at nexus + "content/repositories/snapshots")
+      else
+        Some("releases"  at nexus + "service/local/staging/deploy/maven2")
     },
-
-    //publishTo := Some(Resolver.file("file",  new File( Path.userHome.absolutePath + "/mvn_repo/repository/releases" )) ),
 
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-q", "-v"),
 
     pomExtra := (
-      <url>https://github.com/nathanmarz/dfs-datastores</url>
+      <url>https://github.com/indix/dfs-datastores</url>
       <licenses>
         <license>
           <name>Eclipse Public License</name>
@@ -84,12 +84,11 @@ object Build extends Build {
       </developers>)
   )
 
-  lazy val bundle = Project(
-    id = "bundle",
+  lazy val root = Project(
+    id = "root",
     base = file("."),
     settings = sharedSettings
   ).settings(
-//    test := { },
     publish := { }, // skip publishing for this root project.
     publishLocal := { }
   ).aggregate(core, cascading)
@@ -108,8 +107,8 @@ object Build extends Build {
       "org.apache.hadoop" % "hadoop-core" % "2.0.0-mr1-cdh4.2.1" % "test",
       "com.hadoop.gplcompression" % "hadoop-lzo" % "0.4.15",
       "org.scalatest" %% "scalatest" % "2.2.0" % "test",
-      "com.twitter" % "scalding-args_2.10" % "0.15.0",
-      "org.scalaj" % "scalaj-time_2.9.2" % "0.6",
+      "joda-time" % "joda-time" % "2.8.2",
+      "org.joda" % "joda-convert" % "1.7",
       "org.apache.commons" % "commons-lang3" % "3.1"
     ).map(_.exclude("commons-daemon", "commons-daemon"))
   )
