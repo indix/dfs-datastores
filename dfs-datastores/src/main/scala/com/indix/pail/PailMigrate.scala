@@ -1,7 +1,6 @@
 package com.indix.pail
 
-import java.io.{File, IOException}
-import java.util
+import java.io.IOException
 
 import _root_.util.DateHelper
 import com.backtype.hadoop.pail.SequenceFileFormat.SequenceFilePailInputFormat
@@ -16,23 +15,6 @@ import org.apache.hadoop.mapred._
 import org.apache.hadoop.util.{Tool, ToolRunner}
 import org.apache.log4j.Logger
 import org.joda.time.DateTime
-
-import scala.collection.JavaConversions._
-
-class BlacklistedPailPathLister extends PailPathLister {
-  val delegate = new AllPailPathLister()
-  var blacklistedPaths: Array[String] = _
-
-  def initConf(blacklistedPaths: Array[String]): Unit = {
-    this.blacklistedPaths = blacklistedPaths
-  }
-
-
-  override def getPaths(p: Pail[_]): util.List[Path] = {
-    val paths = delegate.getPaths(p)
-    paths.filter(p => !blacklistedPaths.exists(excludePattern => p.toUri.toString.startsWith(excludePattern)))
-  }
-}
 
 class PailMigrate extends Tool with ArgsParser {
   val logger = Logger.getLogger(this.getClass)
@@ -64,9 +46,6 @@ class PailMigrate extends Tool with ArgsParser {
 
     val keepSourceFiles = cmdOptionalArgs("keep-source").getOrElse("false").toBoolean
 
-    val runReducer = cmdOptionalArgs("run-reducer").getOrElse("true").toBoolean
-    val blacklistedPath = cmdOptionalArgs("blacklist").getOrElse("")
-
     val targetPailStructure = Class.forName(targetSpecClass).newInstance().asInstanceOf[PailStructure[recordClass.type]]
 
     val jobConf = new JobConf(getConf)
@@ -86,32 +65,15 @@ class PailMigrate extends Tool with ArgsParser {
     jobConf.setInputFormat(classOf[SequenceFilePailInputFormat])
     FileInputFormat.addInputPath(jobConf, new Path(inputDir))
 
-    jobConf.setMapOutputKeyClass(classOf[Text])
-    jobConf.setMapOutputValueClass(classOf[BytesWritable])
-
     jobConf.setOutputFormat(classOf[PailOutputFormat])
     FileOutputFormat.setOutputPath(jobConf, new Path(outputDir))
 
     Utils.setObject(jobConf, PailMigrate.OUTPUT_STRUCTURE, targetPailStructure)
 
-
-    if (blacklistedPath.nonEmpty) {
-      val blacklistedPaths = io.Source.fromFile(new File(blacklistedPath))("UTF-8").getLines().toArray
-      val pathLister = new BlacklistedPailPathLister()
-      pathLister.initConf(blacklistedPaths)
-
-      PailFormatFactory.setPailPathLister(jobConf, pathLister)
-    }
-
     jobConf.setMapperClass(classOf[PailMigrateMapper])
     jobConf.setJarByClass(this.getClass)
 
-    if (runReducer) {
-      jobConf.setReducerClass(classOf[PailMigrateReducer])
-      jobConf.setNumReduceTasks(200)
-    } else {
-      jobConf.setNumReduceTasks(0)
-    }
+    jobConf.setNumReduceTasks(0)
 
     val job = new JobClient(jobConf).submitJob(jobConf)
 
@@ -148,8 +110,6 @@ class PailMigrate extends Tool with ArgsParser {
     cmdOptions.addOption("t", "target-pail-spec", true, "Target Pail Spec")
     cmdOptions.addOption("r", "record-type", true, "Record Type")
     cmdOptions.addOption("k", "keep-source", false, "Keep Source")
-    cmdOptions.addOption("g", "run-reducer", false, "Run Reducer")
-    cmdOptions.addOption("b", "blacklist", false, "Blacklist Path")
     cmdOptions
   }
 }
@@ -170,18 +130,6 @@ object PailMigrate {
 
     override def configure(jobConf: JobConf): Unit = {
       outputPailStructure = Utils.getObject(jobConf, OUTPUT_STRUCTURE).asInstanceOf[PailStructure[Any]]
-    }
-  }
-
-  class PailMigrateReducer extends Reducer[Text, BytesWritable, Text, BytesWritable] {
-
-    override def close(): Unit = {}
-
-    override def configure(jobConf: JobConf): Unit = {}
-
-    override def reduce(key: Text, iterator: util.Iterator[BytesWritable], outputCollector: OutputCollector[Text, BytesWritable], reporter: Reporter): Unit = {
-      while (iterator.hasNext)
-        outputCollector.collect(key, iterator.next())
     }
   }
 
