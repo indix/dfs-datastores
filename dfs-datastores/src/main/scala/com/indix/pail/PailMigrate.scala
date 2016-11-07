@@ -1,11 +1,10 @@
 package com.indix.pail
 
 import java.io.IOException
-import java.util
 
 import _root_.util.DateHelper
 import com.backtype.hadoop.pail.SequenceFileFormat.SequenceFilePailInputFormat
-import com.backtype.hadoop.pail.{PailOutputFormat, PailRecordInfo, PailStructure}
+import com.backtype.hadoop.pail._
 import com.backtype.support.Utils
 import com.indix.pail.PailMigrate._
 import org.apache.commons.cli.{Options, PosixParser}
@@ -66,19 +65,15 @@ class PailMigrate extends Tool with ArgsParser {
     jobConf.setInputFormat(classOf[SequenceFilePailInputFormat])
     FileInputFormat.addInputPath(jobConf, new Path(inputDir))
 
-    jobConf.setMapOutputKeyClass(classOf[Text])
-    jobConf.setMapOutputValueClass(classOf[BytesWritable])
-
     jobConf.setOutputFormat(classOf[PailOutputFormat])
     FileOutputFormat.setOutputPath(jobConf, new Path(outputDir))
 
     Utils.setObject(jobConf, PailMigrate.OUTPUT_STRUCTURE, targetPailStructure)
 
     jobConf.setMapperClass(classOf[PailMigrateMapper])
-    jobConf.setReducerClass(classOf[PailMigrateReducer])
-
-    jobConf.setNumReduceTasks(200)
     jobConf.setJarByClass(this.getClass)
+
+    jobConf.setNumReduceTasks(0)
 
     val job = new JobClient(jobConf).submitJob(jobConf)
 
@@ -114,7 +109,7 @@ class PailMigrate extends Tool with ArgsParser {
     cmdOptions.addOption("o", "output-dir", true, "Output Directory")
     cmdOptions.addOption("t", "target-pail-spec", true, "Target Pail Spec")
     cmdOptions.addOption("r", "record-type", true, "Record Type")
-    cmdOptions.addOption("k", "keep-source", false, "Keep Source")
+    cmdOptions.addOption("k", "keep-source", true, "Keep Source")
     cmdOptions
   }
 }
@@ -135,18 +130,6 @@ object PailMigrate {
 
     override def configure(jobConf: JobConf): Unit = {
       outputPailStructure = Utils.getObject(jobConf, OUTPUT_STRUCTURE).asInstanceOf[PailStructure[Any]]
-    }
-  }
-
-  class PailMigrateReducer extends Reducer[Text, BytesWritable, Text, BytesWritable] {
-
-    override def close(): Unit = {}
-
-    override def configure(jobConf: JobConf): Unit = {}
-
-    override def reduce(key: Text, iterator: util.Iterator[BytesWritable], outputCollector: OutputCollector[Text, BytesWritable], reporter: Reporter): Unit = {
-      while (iterator.hasNext)
-        outputCollector.collect(key, iterator.next())
     }
   }
 
