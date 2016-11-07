@@ -44,7 +44,7 @@ class PailMigrate extends Tool with ArgsParser {
     val recordType = cmdArgs("record-type")
     val recordClass = Class.forName(recordType)
 
-    val keepSourceFiles = cmdOptionalArgs("keep-source").getOrElse("false").toBoolean
+    val keepSourceFiles = cmdArgs("keep-source").toBoolean
 
     val targetPailStructure = Class.forName(targetSpecClass).newInstance().asInstanceOf[PailStructure[recordClass.type]]
 
@@ -109,7 +109,7 @@ class PailMigrate extends Tool with ArgsParser {
     cmdOptions.addOption("o", "output-dir", true, "Output Directory")
     cmdOptions.addOption("t", "target-pail-spec", true, "Target Pail Spec")
     cmdOptions.addOption("r", "record-type", true, "Record Type")
-    cmdOptions.addOption("k", "keep-source", false, "Keep Source")
+    cmdOptions.addOption("k", "keep-source", true, "Keep Source")
     cmdOptions
   }
 }
