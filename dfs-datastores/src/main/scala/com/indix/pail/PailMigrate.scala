@@ -49,10 +49,8 @@ class PailMigrate extends Tool with ArgsParser {
     val targetPailStructure = Class.forName(targetSpecClass).newInstance().asInstanceOf[PailStructure[recordClass.type]]
 
     val jobConf = new JobConf(getConf)
-    // FIXME Make pool and priority configurable
+
     jobConf.setJobName("Pail Migration job (from one scheme to another)")
-    jobConf.set("mapred.fairscheduler.pool", "hadoop")
-    jobConf.setJobPriority(JobPriority.VERY_HIGH)
 
     val path: Path = new Path(inputDir)
     val fs = path.getFileSystem(getConf)
