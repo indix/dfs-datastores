@@ -164,6 +164,10 @@ object IxPailArchiver extends ArgsParser {
   override val options: Options = {
     val cmdOptions = new Options()
     cmdOptions.addOption("i", "base-input-dir", true, "Input Directory")
+    cmdOptions.addOption("o", "output-dir", true, "Output Directory")
+    cmdOptions.addOption("t", "target-pail-spec", true, "Target Pail Spec")
+    cmdOptions.addOption("r", "record-type", true, "Record Type")
+    cmdOptions.addOption("k", "keep-source", true, "Keep Source")
     cmdOptions
   }
 }
