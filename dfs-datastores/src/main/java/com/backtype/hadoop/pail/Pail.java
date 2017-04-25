@@ -582,7 +582,13 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
 
     @Override
     protected boolean rename(Path source, Path dest) throws IOException {
-        return _fs.rename(source, dest);
+        // Renames are noop when on S3
+        return isS3FS() || _fs.rename(source, dest);
+    }
+
+    @Override
+    protected boolean isS3FS() {
+        return _fs.getScheme().equals("s3n");
     }
 
     @Override
