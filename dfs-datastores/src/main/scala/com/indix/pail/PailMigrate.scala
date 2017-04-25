@@ -153,8 +153,9 @@ object IxPailArchiver extends ArgsParser {
     val fs = inputDirPath.getFileSystem(configuration)
 
     if (fs.exists(inputDirPath)) {
-      val newParams = args ++ Array("--input-dir", inputDirPath.toString)
-      ToolRunner.run(configuration, new PailMigrate, newParams)
+      val loc = args.indexOf("--base-input-dir")
+      val finalParams = args.slice(0, loc) ++ args.slice(loc + 2, args.length) ++ Array("--input-dir", inputDirPath.toString)
+      ToolRunner.run(configuration, new PailMigrate, finalParams)
     } else {
       logger.info("The following location doesn't exist:" + inputDirPath)
     }
