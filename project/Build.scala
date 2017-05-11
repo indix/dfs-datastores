@@ -7,6 +7,7 @@ object Build extends Build {
 
   val sharedSettings = Project.defaultSettings ++ Seq(
     organization := "com.indix",
+    version := appVersion(),
 
     crossPaths := true,
     crossScalaVersions := Seq("2.11.8"),
