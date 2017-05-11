@@ -2,6 +2,7 @@ import sbt._
 import Keys._
 
 object Build extends Build {
+  def appVersion() = sys.env.getOrElse("GO_PIPELINE_LABEL", "1.0.0-SNAPSHOT")
   val ScalaVersion = "2.10.4"
 
   val sharedSettings = Project.defaultSettings ++ Seq(
@@ -44,11 +45,10 @@ object Build extends Build {
     pomIncludeRepository := { x => false },
 
     publishTo := {
-      val nexus = "https://oss.sonatype.org/"
-      if (isSnapshot.value)
-        Some("snapshots" at nexus + "content/repositories/snapshots")
+      if(appVersion().endsWith("-SNAPSHOT"))
+        Some("Indix Snapshot Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-snapshot-local")
       else
-        Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+        Some("Indix Release Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-release-local")
     },
 
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-q", "-v"),
