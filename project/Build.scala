@@ -12,8 +12,8 @@ object Build extends Build {
     crossPaths := true,
     crossScalaVersions := Seq("2.11.8"),
 
-    javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-    javacOptions in doc := Seq("-source", "1.8"),
+    javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
+    javacOptions in doc := Seq("-source", "1.7"),
 
     libraryDependencies ++= Seq(
       "com.novocode" % "junit-interface" % "0.11" % "test",
