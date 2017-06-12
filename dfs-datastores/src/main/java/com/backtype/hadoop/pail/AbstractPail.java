@@ -370,7 +370,7 @@ public abstract class AbstractPail {
 
     private void getFilesHelperOptimized(Path abs, String rel, List<String> extensions, boolean stripExtension, List<String> files) throws IOException {
         ThreadPoolExecutor executorService = (ThreadPoolExecutor)Executors.newFixedThreadPool(16);
-        BlockingQueue<FileStatus> outQ = new LinkedBlockingQueue<FileStatus>(100000);
+        BlockingQueue<FileStatus> outQ = new LinkedBlockingQueue<FileStatus>();
         List<FileStatus> items = Arrays.asList(listStatus(abs));
         LOGGER.info("Start enlisting base dir " + abs);
         long startFileListing = System.currentTimeMillis();
