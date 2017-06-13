@@ -10,7 +10,7 @@ object Build extends Build {
     version := appVersion(),
 
     crossPaths := true,
-    crossScalaVersions := Seq("2.11.8"),
+    crossScalaVersions := Seq("2.11.8", ScalaVersion),
 
     javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
     javacOptions in doc := Seq("-source", "1.7"),
