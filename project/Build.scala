@@ -86,8 +86,8 @@ object Build extends Build {
       </developers>)
   )
 
-  lazy val root = Project(
-    id = "root",
+  lazy val dfsDatastores = Project(
+    id = "dfs-datastores-main",
     base = file("."),
     settings = sharedSettings
   ).settings(
@@ -122,8 +122,10 @@ object Build extends Build {
   ).settings(
     name := "dfs-datastores-cascading",
     libraryDependencies ++= Seq(
-      "cascading" % "cascading-core" % "2.0.7",
-      "cascading" % "cascading-hadoop" % "2.0.7"
+      "cascading" % "cascading-core" % "2.5.5",
+      "cascading" % "cascading-hadoop" % "2.5.5",
+      "org.apache.hadoop" % "hadoop-client" % "2.0.0-mr1-cdh4.2.1" % "provided",
+      "org.apache.hadoop" % "hadoop-core" % "2.0.0-mr1-cdh4.2.1" % "test"
     )
   ).dependsOn(core)
 
