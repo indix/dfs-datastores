@@ -499,43 +499,51 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
         consolidate(Consolidator.DEFAULT_CONSOLIDATION_SIZE);
     }
 
+    public void consolidate(long maxSize) throws IOException {
+        consolidate(maxSize, new PailPathLister(false));
+    }
+
+    public void consolidate(long maxSize, PathLister lister) throws IOException {
+        PailStructure structure = getSpec().getStructure();
+        List<String> consolidatedirs = computeConsolidateDirs(structure);
+
+        Consolidator.consolidate(_fs, _format, lister, consolidatedirs, maxSize, EXTENSION, structure, getRoot());
+    }
+
     public void consolidateNonMR() throws IOException {
         consolidateNonMR(Consolidator.DEFAULT_CONSOLIDATION_SIZE);
     }
 
-    public void consolidate(long maxSize) throws IOException {
-        List<String> toCheck = new ArrayList<String>();
-        toCheck.add("");
-        PailStructure structure = getSpec().getStructure();
-        List<String> consolidatedirs = new ArrayList<String>();
-        consolidatedirs.add(toFullPath(""));
-        while(toCheck.size()>0) {
-            String dir = toCheck.remove(0);
-            List<String> dirComponents = componentsFromRoot(dir);
-            if(!structure.isValidTarget(dirComponents.toArray(new String[dirComponents.size()]))) {
-                FileStatus[] contents = listStatus(new Path(toFullPath(dir)));
-                for(FileStatus f: contents) {
-                    if(!f.isDir()) {
-                        if(f.getPath().toString().endsWith(EXTENSION))
-                            throw new IllegalStateException(f.getPath().toString() + " is not a dir and breaks the structure of " + getInstanceRoot());
-                    } else {
-                        String newDir;
-                        if(dir.length()==0) newDir = f.getPath().getName();
-                        else newDir = dir + "/" + f.getPath().getName();
-                        toCheck.add(newDir);
-                    }
-                }
-            }
-        }
-
-        Consolidator.consolidate(_fs, _format, new PailPathLister(false), consolidatedirs, maxSize, EXTENSION, structure, getRoot());
+    public void consolidateNonMR(long maxSize) throws IOException {
+        consolidateNonMR(maxSize, new PailPathLister(false));
     }
 
+    public void consolidateNonMR(long maxSize, PathLister lister) throws IOException {
+        PailStructure structure = getSpec().getStructure();
+        List<String> consolidatedirs = computeConsolidateDirs(structure);
 
-    public void consolidateNonMR(long maxSize) throws IOException {
+        Consolidator.consolidateNonMR(_fs, _format, lister, consolidatedirs, maxSize, EXTENSION, structure, getRoot());
+    }
+
+    public void consolidateIncrementally() throws IOException {
+        consolidateIncrementally(100000);
+    }
+
+    public void consolidateIncrementally(int numberOfFilesToConsolidate) throws IOException {
+        consolidate(Consolidator.DEFAULT_CONSOLIDATION_SIZE, new LimitedPailPathLister(false, numberOfFilesToConsolidate));
+    }
+
+    public void consolidateIncrementallyNonMR() throws IOException {
+        consolidateIncrementallyNonMR(100000);
+    }
+
+    public void consolidateIncrementallyNonMR(int numberOfFilesToConsolidate) throws IOException {
+        consolidateNonMR(Consolidator.DEFAULT_CONSOLIDATION_SIZE, new LimitedPailPathLister(false, numberOfFilesToConsolidate));
+    }
+
+    protected List<String> computeConsolidateDirs(PailStructure structure) throws IOException {
         List<String> toCheck = new ArrayList<String>();
         toCheck.add("");
-        PailStructure structure = getSpec().getStructure();
         List<String> consolidatedirs = new ArrayList<String>();
         consolidatedirs.add(toFullPath(""));
         while(toCheck.size()>0) {
@@ -556,8 +564,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
                 }
             }
         }
-
-        Consolidator.consolidateNonMR(_fs, _format, new PailPathLister(false), consolidatedirs, maxSize, EXTENSION, structure, getRoot());
+        return consolidatedirs;
     }
 
     @Override
@@ -658,6 +665,36 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
                     ret = p.getStoredFiles();
                 }
                 return ret;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    protected static class LimitedPailPathLister implements PathLister {
+        boolean _includeMeta;
+        int _maxFilesToReturn;
+
+        public LimitedPailPathLister() {
+            this(true, Integer.MAX_VALUE);
+        }
+
+        public LimitedPailPathLister(boolean includeMeta, int maxFilesToReturn) {
+            _includeMeta = includeMeta;
+            _maxFilesToReturn = maxFilesToReturn;
+        }
+
+        public List<Path> getFiles(FileSystem fs, String path) {
+            try {
+                Pail p = new Pail(fs, path);
+                List<Path> ret;
+                if(_includeMeta) {
+                    ret = p.getStoredFilesAndMetadata();
+                } else {
+                    ret = p.getStoredFiles();
+                }
+                LOG.info("Got " + ret.size() + " files but returning only " + _maxFilesToReturn);
+                return ret.subList(0, _maxFilesToReturn);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
