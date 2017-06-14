@@ -526,7 +526,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
     }
 
     public void consolidateIncrementally() throws IOException {
-        consolidateIncrementally(100000);
+        consolidateIncrementally(50000);
     }
 
     public void consolidateIncrementally(int numberOfFilesToConsolidate) throws IOException {
@@ -534,7 +534,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
     }
 
     public void consolidateIncrementallyNonMR() throws IOException {
-        consolidateIncrementallyNonMR(100000);
+        consolidateIncrementallyNonMR(50000);
     }
 
     public void consolidateIncrementallyNonMR(int numberOfFilesToConsolidate) throws IOException {
