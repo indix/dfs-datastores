@@ -205,7 +205,7 @@ public abstract class AbstractPail {
 
     public List<String> getUserFileNames(int maxFilesToReturn) throws IOException {
         List<String> ret = new ArrayList<String>();
-        getFilesHelper(new Path(_instance_root), "", EXTENSION, true, ret);
+        getFilesHelper(new Path(_instance_root), "", EXTENSION, true, ret, maxFilesToReturn);
         return ret;
     }
 
@@ -240,12 +240,7 @@ public abstract class AbstractPail {
     }
 
     public List<Path> getStoredFiles() throws IOException {
-        List<String> userfiles = getUserFileNames();
-        List<Path> ret = new ArrayList<Path>();
-        for(String u: userfiles) {
-            ret.add(toStoredPath(u));
-        }
-        return ret;
+        return getStoredFiles(Integer.MAX_VALUE);
     }
 
 
