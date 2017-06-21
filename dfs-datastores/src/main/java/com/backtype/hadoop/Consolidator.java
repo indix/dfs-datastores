@@ -24,6 +24,7 @@ import java.util.*;
 
 public class Consolidator {
     public static final long DEFAULT_CONSOLIDATION_SIZE = 1024*1024*1024*2l; //2G
+    public static final int DEFAULT_INCREMENTAL_CONSOLIDATE = 20000;
     private static final String ARGS = "consolidator_args";
 
     private static Thread shutdownHook;

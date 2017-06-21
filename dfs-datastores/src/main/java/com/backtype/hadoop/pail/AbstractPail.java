@@ -5,13 +5,10 @@ import com.backtype.hadoop.formats.RecordOutputStream;
 import com.backtype.support.Retry;
 import com.backtype.support.Utils;
 import com.google.common.base.Function;
-import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import com.google.common.util.concurrent.Futures;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
-import scala.concurrent.ExecutionContext;
 
 import java.io.IOException;
 import java.net.URI;
@@ -206,10 +203,14 @@ public abstract class AbstractPail {
     protected abstract boolean isS3Root();
     protected abstract FileStatus[] listStatus(Path path) throws IOException;
 
-    public List<String> getUserFileNames() throws IOException {
+    public List<String> getUserFileNames(int maxFilesToReturn) throws IOException {
         List<String> ret = new ArrayList<String>();
         getFilesHelper(new Path(_instance_root), "", EXTENSION, true, ret);
         return ret;
+    }
+
+    public List<String> getUserFileNames() throws IOException {
+        return getUserFileNames(Integer.MAX_VALUE);
     }
 
     public Path toStoredPath(String userfilename) {
@@ -227,6 +228,15 @@ public abstract class AbstractPail {
 
     public void delete(String userfilename) throws IOException {
         delete(toStoredPath(userfilename), false);
+    }
+
+    public List<Path> getStoredFiles(int limit) throws IOException {
+        List<String> userfiles = getUserFileNames(limit);
+        List<Path> ret = new ArrayList<Path>();
+        for(String u: userfiles) {
+            ret.add(toStoredPath(u));
+        }
+        return ret;
     }
 
     public List<Path> getStoredFiles() throws IOException {
@@ -255,11 +265,15 @@ public abstract class AbstractPail {
     }
 
     public List<Path> getStoredFilesAndMetadata() throws IOException {
+        return getStoredFilesAndMetadata(Integer.MAX_VALUE);
+    }
+
+    public List<Path> getStoredFilesAndMetadata(int maxFilesToReturn) throws IOException {
         List<String> relFiles = new ArrayList<String>();
         List<String> extensions = new ArrayList<String>();
         extensions.add(META_EXTENSION);
         extensions.add(EXTENSION);
-        getFilesHelperOptimized(new Path(_instance_root), "", extensions, false, relFiles);
+        getFilesHelperOptimized(new Path(_instance_root), "", extensions, false, relFiles, maxFilesToReturn);
         List<Path> ret = new ArrayList<Path>();
         for(String rel: relFiles) {
             ret.add(new Path(_instance_root, rel));
@@ -321,35 +335,14 @@ public abstract class AbstractPail {
         else return new Path(root, name).toString();
     }
 
-    private void getFilesHelper(Path abs, String rel, String extension, boolean stripExtension, List<String> files) throws IOException {
+    private void getFilesHelper(Path abs, String rel, String extension, boolean stripExtension, List<String> files, int maxFilesToReturn) throws IOException {
         List<String> extensions = new ArrayList<String>();
         extensions.add(extension);
-        getFilesHelperOptimized(abs, rel, extensions, stripExtension, files);
+        getFilesHelperOptimized(abs, rel, extensions, stripExtension, files, maxFilesToReturn);
     }
 
-//    TODO: This should go away after we find it stable.
-    private void getFilesHelper(Path abs, String rel, List<String> extensions, boolean stripExtension, List<String> files) throws IOException {
-        FileStatus[] contents = listStatus(abs);
-        for(FileStatus stat: contents) {
-            Path p = stat.getPath();
-            if(stat.isDir()) {
-                getFilesHelper(p, relify(rel, stat.getPath().getName()), extensions, stripExtension, files);
-            } else {
-                String filename = relify(rel, stat.getPath().getName());
-                for(String extension: extensions) {
-                    if(filename.endsWith(extension) && stat.getLen()>0) {
-                        String toAdd;
-                        if(stripExtension) {
-                            toAdd = Utils.stripExtension(filename, extension);
-                        } else {
-                            toAdd = filename;
-                        }
-                        files.add(toAdd);
-                        break;
-                    }
-                }
-            }
-        }
+    private void getFilesHelper(Path abs, String rel, String extension, boolean stripExtension, List<String> files) throws IOException {
+        getFilesHelper(abs, rel, extension, stripExtension, files, Integer.MAX_VALUE);
     }
 
     private Path withoutScheme(Path path){
@@ -368,7 +361,7 @@ public abstract class AbstractPail {
         }
     }
 
-    private void getFilesHelperOptimized(Path abs, String rel, List<String> extensions, boolean stripExtension, List<String> files) throws IOException {
+    private void getFilesHelperOptimized(Path abs, String rel, List<String> extensions, boolean stripExtension, List<String> files, int maxFilesToReturn) throws IOException {
         ThreadPoolExecutor executorService = (ThreadPoolExecutor)Executors.newFixedThreadPool(16);
         BlockingQueue<FileStatus> outQ = new LinkedBlockingQueue<FileStatus>();
         List<FileStatus> items = Arrays.asList(listStatus(abs));
@@ -394,7 +387,7 @@ public abstract class AbstractPail {
                 executorService.submit(fetchFiles(outQ, item.getPath()));
                 ++tasksSubmitted;
             }
-        } while (executorService.getCompletedTaskCount() < tasksSubmitted || !outQ.isEmpty());
+        } while (executorService.getCompletedTaskCount() < tasksSubmitted || !outQ.isEmpty() || files.size() >= maxFilesToReturn);
         executorService.shutdown();
         LOGGER.info("Total # of files under " + abs.toString() + " = " + files.size() + ", took: " + (System.currentTimeMillis() - startFileListing) + " millis");
     }

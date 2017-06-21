@@ -526,7 +526,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
     }
 
     public void consolidateIncrementally() throws IOException {
-        consolidateIncrementally(50000);
+        consolidateIncrementally(Consolidator.DEFAULT_INCREMENTAL_CONSOLIDATE);
     }
 
     public void consolidateIncrementally(int numberOfFilesToConsolidate) throws IOException {
@@ -534,7 +534,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
     }
 
     public void consolidateIncrementallyNonMR() throws IOException {
-        consolidateIncrementallyNonMR(50000);
+        consolidateIncrementallyNonMR(Consolidator.DEFAULT_INCREMENTAL_CONSOLIDATE);
     }
 
     public void consolidateIncrementallyNonMR(int numberOfFilesToConsolidate) throws IOException {
@@ -689,9 +689,9 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
                 Pail p = new Pail(fs, path);
                 List<Path> ret;
                 if(_includeMeta) {
-                    ret = p.getStoredFilesAndMetadata();
+                    ret = p.getStoredFilesAndMetadata(_maxFilesToReturn);
                 } else {
-                    ret = p.getStoredFiles();
+                    ret = p.getStoredFiles(_maxFilesToReturn);
                 }
                 LOG.info("Got " + ret.size() + " files but returning only " + _maxFilesToReturn);
                 return ret.subList(0, _maxFilesToReturn);
