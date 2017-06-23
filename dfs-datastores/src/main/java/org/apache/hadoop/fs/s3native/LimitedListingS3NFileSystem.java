@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  * We couldn't extend NativeS3FileSystem because of the store instance being private and not
  * being re-usable :(
  * </p>
- * <h3>PURPOSE</h3>
+ * <h1>PURPOSE</h1>
  * <p>
  * We would use this FS implementation during Pail.consolidateIncrementally(), so we can control how many
  * objects we retrieve from S3. For a location with large number of objects, PailConsolidate effectively
@@ -242,7 +242,6 @@ public class LimitedListingS3NFileSystem extends FileSystem {
 
     /**
      * Return the protocol scheme for the FileSystem.
-     * <p/>
      *
      * @return <code>s3n</code>
      */
