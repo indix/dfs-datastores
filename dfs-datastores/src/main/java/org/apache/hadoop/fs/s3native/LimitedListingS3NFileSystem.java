@@ -66,6 +66,11 @@ public class LimitedListingS3NFileSystem extends FileSystem {
     private static final String FOLDER_SUFFIX = "_$folder$";
     static final String PATH_DELIMITER = Path.SEPARATOR;
     private static final int S3_MAX_LISTING_LENGTH = 1000;
+    /**
+     * Maximum number of files to return when doing fs.listStatus().
+     * Default is Integer.MAX_VALUE
+     */
+    public static final String MAX_FILES_TO_LIST = "fs.s3n.list.max";
 
     static class NativeS3FsInputStream extends FSInputStream {
 
@@ -445,6 +450,8 @@ public class LimitedListingS3NFileSystem extends FileSystem {
     @Override
     public FileStatus[] listStatus(Path f) throws IOException {
 
+        int maxFilesToReturn = getConf().getInt(MAX_FILES_TO_LIST, Integer.MAX_VALUE);
+
         Path absolutePath = makeAbsolute(f);
         String key = pathToKey(absolutePath);
 
@@ -480,7 +487,7 @@ public class LimitedListingS3NFileSystem extends FileSystem {
                 status.add(newDirectory(new Path(absolutePath, relativePath)));
             }
             priorLastKey = listing.getPriorLastKey();
-        } while (priorLastKey != null);
+        } while (priorLastKey != null && status.size() <= maxFilesToReturn);
 
         if (status.isEmpty() &&
                 key.length() > 0 &&
