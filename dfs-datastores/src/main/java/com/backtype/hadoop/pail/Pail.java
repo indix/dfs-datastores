@@ -10,7 +10,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.s3.S3FileSystem;
-import org.apache.hadoop.fs.s3native.LimitedListingS3NFileSystem;
+import com.indix.hadoop.fs.s3native.LimitedListingS3NFileSystem;
 import org.apache.hadoop.fs.s3native.NativeS3FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

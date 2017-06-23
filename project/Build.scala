@@ -1,5 +1,5 @@
+import sbt.Keys._
 import sbt._
-import Keys._
 
 object Build extends Build {
   def appVersion() = sys.env.getOrElse("GO_PIPELINE_LABEL", "1.0.0-SNAPSHOT")
@@ -107,6 +107,7 @@ object Build extends Build {
       "com.google.guava" % "guava" % "13.0",
       "org.apache.hadoop" % "hadoop-client" % "2.0.0-mr1-cdh4.2.1" % "provided",
       "org.apache.hadoop" % "hadoop-core" % "2.0.0-mr1-cdh4.2.1" % "test",
+      "net.java.dev.jets3t" % "jets3t" % "0.6.1" % "provided",
       "com.hadoop.gplcompression" % "hadoop-lzo" % "0.4.15",
       "org.scalatest" %% "scalatest" % "2.2.0" % "test",
       "joda-time" % "joda-time" % "2.8.2",
@@ -130,4 +131,3 @@ object Build extends Build {
   ).dependsOn(core)
 
 }
-

@@ -1,4 +1,4 @@
-package org.apache.hadoop.fs.s3native;
+package com.indix.hadoop.fs.s3native;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -75,13 +75,13 @@ public class LimitedListingS3NFileSystem extends FileSystem {
 
     static class NativeS3FsInputStream extends FSInputStream {
 
-        private NativeFileSystemStore store;
+        private IxNativeFileSystemStore store;
         private Statistics statistics;
         private InputStream in;
         private final String key;
         private long pos = 0;
 
-        public NativeS3FsInputStream(NativeFileSystemStore store, Statistics statistics, InputStream in, String key) {
+        public NativeS3FsInputStream(IxNativeFileSystemStore store, Statistics statistics, InputStream in, String key) {
             this.store = store;
             this.statistics = statistics;
             this.in = in;
@@ -162,7 +162,7 @@ public class LimitedListingS3NFileSystem extends FileSystem {
         private boolean closed;
 
         public NativeS3FsOutputStream(Configuration conf,
-                                      NativeFileSystemStore store, String key, Progressable progress,
+                                      IxNativeFileSystemStore store, String key, Progressable progress,
                                       int bufferSize) throws IOException {
             this.conf = conf;
             this.key = key;
@@ -229,14 +229,14 @@ public class LimitedListingS3NFileSystem extends FileSystem {
     }
 
     private URI uri;
-    private NativeFileSystemStore store;
+    private IxNativeFileSystemStore store;
     private Path workingDir;
 
     public LimitedListingS3NFileSystem() {
         // set store in initialize()
     }
 
-    public LimitedListingS3NFileSystem(NativeFileSystemStore store) {
+    public LimitedListingS3NFileSystem(IxNativeFileSystemStore store) {
         this.store = store;
     }
 
@@ -263,8 +263,8 @@ public class LimitedListingS3NFileSystem extends FileSystem {
                 new Path("/user", System.getProperty("user.name")).makeQualified(this);
     }
 
-    private static NativeFileSystemStore createDefaultStore(Configuration conf) {
-        NativeFileSystemStore store = new Jets3tNativeFileSystemStore();
+    private static IxNativeFileSystemStore createDefaultStore(Configuration conf) {
+        IxNativeFileSystemStore store = new IxJets3tNativeFileSystemStore();
 
         RetryPolicy basePolicy = RetryPolicies.retryUpToMaximumCountWithFixedSleep(
                 conf.getInt("fs.s3.maxRetries", 4),
@@ -281,8 +281,8 @@ public class LimitedListingS3NFileSystem extends FileSystem {
         methodNameToPolicyMap.put("storeFile", methodPolicy);
         methodNameToPolicyMap.put("rename", methodPolicy);
 
-        return (NativeFileSystemStore)
-                RetryProxy.create(NativeFileSystemStore.class, store,
+        return (IxNativeFileSystemStore)
+                RetryProxy.create(IxNativeFileSystemStore.class, store,
                         methodNameToPolicyMap);
     }
 
@@ -366,8 +366,8 @@ public class LimitedListingS3NFileSystem extends FileSystem {
             }
             String priorLastKey = null;
             do {
-                PartialListing listing = store.list(key, S3_MAX_LISTING_LENGTH, priorLastKey, true);
-                for (FileMetadata file : listing.getFiles()) {
+                IxPartialListing listing = store.list(key, S3_MAX_LISTING_LENGTH, priorLastKey, true);
+                for (IxFileMetadata file : listing.getFiles()) {
                     store.delete(file.getKey());
                 }
                 priorLastKey = listing.getPriorLastKey();
@@ -400,7 +400,7 @@ public class LimitedListingS3NFileSystem extends FileSystem {
         if (LOG.isDebugEnabled()) {
             LOG.debug("getFileStatus retrieving metadata for key '" + key + "'");
         }
-        FileMetadata meta = store.retrieveMetadata(key);
+        IxFileMetadata meta = store.retrieveMetadata(key);
         if (meta != null) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("getFileStatus returning 'file' for key '" + key + "'");
@@ -418,7 +418,7 @@ public class LimitedListingS3NFileSystem extends FileSystem {
         if (LOG.isDebugEnabled()) {
             LOG.debug("getFileStatus listing key '" + key + "'");
         }
-        PartialListing listing = store.list(key, 1);
+        IxPartialListing listing = store.list(key, 1);
         if (listing.getFiles().length > 0 ||
                 listing.getCommonPrefixes().length > 0) {
             if (LOG.isDebugEnabled()) {
@@ -456,7 +456,7 @@ public class LimitedListingS3NFileSystem extends FileSystem {
         String key = pathToKey(absolutePath);
 
         if (key.length() > 0) {
-            FileMetadata meta = store.retrieveMetadata(key);
+            IxFileMetadata meta = store.retrieveMetadata(key);
             if (meta != null) {
                 return new FileStatus[]{newFile(meta, absolutePath)};
             }
@@ -466,8 +466,8 @@ public class LimitedListingS3NFileSystem extends FileSystem {
         Set<FileStatus> status = new TreeSet<FileStatus>();
         String priorLastKey = null;
         do {
-            PartialListing listing = store.list(key, S3_MAX_LISTING_LENGTH, priorLastKey, false);
-            for (FileMetadata fileMetadata : listing.getFiles()) {
+            IxPartialListing listing = store.list(key, S3_MAX_LISTING_LENGTH, priorLastKey, false);
+            for (IxFileMetadata fileMetadata : listing.getFiles()) {
                 Path subpath = keyToPath(fileMetadata.getKey());
                 String relativePath = pathUri.relativize(subpath.toUri()).getPath();
 
@@ -498,7 +498,7 @@ public class LimitedListingS3NFileSystem extends FileSystem {
         return status.toArray(new FileStatus[status.size()]);
     }
 
-    private FileStatus newFile(FileMetadata meta, Path path) {
+    private FileStatus newFile(IxFileMetadata meta, Path path) {
         return new FileStatus(meta.getLength(), false, 1, getDefaultBlockSize(),
                 meta.getLastModified(), path.makeQualified(this));
     }
@@ -642,8 +642,8 @@ public class LimitedListingS3NFileSystem extends FileSystem {
             List<String> keysToDelete = new ArrayList<String>();
             String priorLastKey = null;
             do {
-                PartialListing listing = store.list(srcKey, S3_MAX_LISTING_LENGTH, priorLastKey, true);
-                for (FileMetadata file : listing.getFiles()) {
+                IxPartialListing listing = store.list(srcKey, S3_MAX_LISTING_LENGTH, priorLastKey, true);
+                for (IxFileMetadata file : listing.getFiles()) {
                     keysToDelete.add(file.getKey());
                     store.copy(file.getKey(), dstKey + file.getKey().substring(srcKey.length()));
                 }
