@@ -5,10 +5,12 @@ import com.backtype.hadoop.formats.RecordInputStream;
 import com.backtype.hadoop.formats.RecordOutputStream;
 import com.backtype.support.IOBufferMap;
 import com.backtype.support.Utils;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.s3.S3FileSystem;
+import org.apache.hadoop.fs.s3native.LimitedListingS3NFileSystem;
 import org.apache.hadoop.fs.s3native.NativeS3FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -530,6 +532,15 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
     }
 
     public void consolidateIncrementally(int numberOfFilesToConsolidate) throws IOException {
+        // set twice the number of files to consolidate for listing
+        // so that for really large locations, it would also consider
+        // the consolidated files as well
+        Configuration conf = _fs.getConf();
+        conf.setInt(LimitedListingS3NFileSystem.MAX_FILES_TO_LIST, numberOfFilesToConsolidate * 2);
+        conf.set("fs.s3n.impl", LimitedListingS3NFileSystem.class.getCanonicalName());
+        // Reset FS to our new LimitedListingS3NFileSystem for consolidating, this is needed if we're
+        // doing nonMR based consolidate
+        _fs = Utils.getFS(_fs.getUri().toASCIIString(), conf);
         consolidate(Consolidator.DEFAULT_CONSOLIDATION_SIZE, new LimitedPailPathLister(false, numberOfFilesToConsolidate));
     }
 

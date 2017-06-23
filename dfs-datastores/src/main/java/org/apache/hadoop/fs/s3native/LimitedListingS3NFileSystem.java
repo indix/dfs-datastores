@@ -61,7 +61,7 @@ import java.util.concurrent.TimeUnit;
 public class LimitedListingS3NFileSystem extends FileSystem {
 
     public static final Log LOG =
-            LogFactory.getLog(org.apache.hadoop.fs.s3native.NativeS3FileSystem.class);
+            LogFactory.getLog(LimitedListingS3NFileSystem.class);
 
     private static final String FOLDER_SUFFIX = "_$folder$";
     static final String PATH_DELIMITER = Path.SEPARATOR;
@@ -551,7 +551,7 @@ public class LimitedListingS3NFileSystem extends FileSystem {
         Path absolutePath = makeAbsolute(f);
         String key = pathToKey(absolutePath);
         return new FSDataInputStream(new BufferedFSInputStream(
-                new org.apache.hadoop.fs.s3native.NativeS3FileSystem.NativeS3FsInputStream(store, statistics, store.retrieve(key), key), bufferSize));
+                new NativeS3FsInputStream(store, statistics, store.retrieve(key), key), bufferSize));
     }
 
     // rename() and delete() use this method to ensure that the parent directory
