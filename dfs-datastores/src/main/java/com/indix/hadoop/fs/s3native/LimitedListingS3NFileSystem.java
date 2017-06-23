@@ -488,7 +488,9 @@ public class LimitedListingS3NFileSystem extends FileSystem {
                 status.add(newDirectory(new Path(absolutePath, relativePath)));
             }
             priorLastKey = listing.getPriorLastKey();
-        } while (priorLastKey != null && status.size() <= maxFilesToReturn);
+
+            if(status.size() >= maxFilesToReturn) break;
+        } while (priorLastKey != null);
 
         if (status.isEmpty() &&
                 key.length() > 0 &&
