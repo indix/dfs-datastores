@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
  * Unlike {@link org.apache.hadoop.fs.s3.S3FileSystem} this implementation
  * stores files on S3 in their
  * native form so they can be read by other S3 tools.
+ * </p>
  * <p>
  * A note about directories. S3 of course has no "native" support for them.
  * The idiom we choose then is: for any directory created by this class,
