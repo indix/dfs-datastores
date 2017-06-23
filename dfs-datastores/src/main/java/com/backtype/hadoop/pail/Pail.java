@@ -707,7 +707,8 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
                     ret = p.getStoredFiles(_maxFilesToReturn);
                 }
                 LOG.info("Got " + ret.size() + " files but returning only " + _maxFilesToReturn);
-                return ret.subList(0, _maxFilesToReturn);
+                if(ret.size() >= _maxFilesToReturn) return ret.subList(0, _maxFilesToReturn);
+                else return ret;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
