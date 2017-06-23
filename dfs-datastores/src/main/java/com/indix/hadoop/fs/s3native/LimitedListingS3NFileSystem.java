@@ -466,7 +466,7 @@ public class LimitedListingS3NFileSystem extends FileSystem {
         Set<FileStatus> status = new TreeSet<FileStatus>();
         String priorLastKey = null;
         do {
-            LOG.info("Fetching maximum of " + S3_MAX_LISTING_LENGTH + "keys from S3. Last known key was " + priorLastKey);
+            LOG.info("Fetching maximum of " + S3_MAX_LISTING_LENGTH + " keys from S3. Last known key was " + priorLastKey);
             IxPartialListing listing = store.list(key, S3_MAX_LISTING_LENGTH, priorLastKey, false);
             for (IxFileMetadata fileMetadata : listing.getFiles()) {
                 Path subpath = keyToPath(fileMetadata.getKey());
