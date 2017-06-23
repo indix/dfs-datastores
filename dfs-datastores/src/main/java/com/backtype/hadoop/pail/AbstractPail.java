@@ -382,7 +382,9 @@ public abstract class AbstractPail {
                 executorService.submit(fetchFiles(outQ, item.getPath()));
                 ++tasksSubmitted;
             }
-        } while (executorService.getCompletedTaskCount() < tasksSubmitted || !outQ.isEmpty() || files.size() >= maxFilesToReturn);
+
+            if(files.size() >= maxFilesToReturn) break;
+        } while (executorService.getCompletedTaskCount() < tasksSubmitted || !outQ.isEmpty());
         executorService.shutdown();
         LOGGER.info("Total # of files under " + abs.toString() + " = " + files.size() + ", took: " + (System.currentTimeMillis() - startFileListing) + " millis");
     }
