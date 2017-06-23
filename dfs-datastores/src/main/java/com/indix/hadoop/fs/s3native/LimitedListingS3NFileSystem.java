@@ -66,7 +66,7 @@ public class LimitedListingS3NFileSystem extends FileSystem {
 
     private static final String FOLDER_SUFFIX = "_$folder$";
     static final String PATH_DELIMITER = Path.SEPARATOR;
-    private static final int S3_MAX_LISTING_LENGTH = 1000;
+    public static final int S3_MAX_LISTING_LENGTH = 1000;
     /**
      * Maximum number of files to return when doing fs.listStatus().
      * Default is Integer.MAX_VALUE

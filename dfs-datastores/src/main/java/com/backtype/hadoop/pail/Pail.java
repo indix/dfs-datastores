@@ -536,7 +536,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
         // so that for really large locations, it would also consider
         // the consolidated files as well
         Configuration conf = _fs.getConf();
-        conf.setInt(LimitedListingS3NFileSystem.MAX_FILES_TO_LIST, numberOfFilesToConsolidate * 2);
+        conf.setInt(LimitedListingS3NFileSystem.MAX_FILES_TO_LIST, numberOfFilesToConsolidate + LimitedListingS3NFileSystem.S3_MAX_LISTING_LENGTH);
         LOG.info("Setting MAX_FILES_TO_LIST as " + conf.getInt(LimitedListingS3NFileSystem.MAX_FILES_TO_LIST, -1));
         conf.set("fs.s3n.impl", LimitedListingS3NFileSystem.class.getCanonicalName());
         LOG.info("Re-wiring the _fs with " + LimitedListingS3NFileSystem.class.getCanonicalName());
