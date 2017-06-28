@@ -354,7 +354,7 @@ public class LimitedListingS3NFileSystem extends FileSystem {
         }
         Path absolutePath = makeAbsolute(f);
         String key = pathToKey(absolutePath);
-        if (status.isDirectory()) {
+        if (status.isDir()) {
             if (!recurse && listStatus(f).length > 0) {
                 throw new IOException("Can not delete " + f + " at is a not empty directory and recurse option is false");
             }
@@ -547,7 +547,7 @@ public class LimitedListingS3NFileSystem extends FileSystem {
     @Override
     public FSDataInputStream open(Path f, int bufferSize) throws IOException {
         FileStatus fs = getFileStatus(f); // will throw if the file doesn't exist
-        if (fs.isDirectory()) {
+        if (fs.isDir()) {
             throw new IOException("'" + f + "' is a directory");
         }
         LOG.info("Opening '" + f + "' for reading");
