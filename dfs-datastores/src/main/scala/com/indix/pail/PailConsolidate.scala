@@ -71,8 +71,9 @@ object IxPailConsolidator extends FSUtils with ArgsParser {
       case "hourly" => thisMoment.minusHours(i).toString(DateTimeFormatter.format())
       case "daily" => thisMoment.minusDays(i).toString(DateTimeFormatter.format())
       case "weekly" => DateHelper.weekInterval(thisMoment.minusWeeks(i))
+      case "quarterly" => DateHelper.getQuarter(thisMoment.minusMonths(i * 3))
       case "all" => ""
-      case _ => throw new RuntimeException("Unsupported strategy. Supported ones are: hourly|daily|weekly|all")
+      case _ => throw new RuntimeException("Unsupported strategy. Supported ones are: hourly|daily|weekly|quarterly|all")
     }
 
     val dirsToConsolidate = (0 until numTimePartitionUnitsToCover).map { i =>
@@ -86,7 +87,7 @@ object IxPailConsolidator extends FSUtils with ArgsParser {
     val cmdOptions = new Options()
     cmdOptions.addOption("i", "input-dir", true, "Input Directory")
     cmdOptions.addOption("p", "pipeline", true, "Pipeline")
-    cmdOptions.addOption("n", "num-parittion-units", true, "Number of Partition Units")
+    cmdOptions.addOption("n", "num-partition-units", true, "Number of Partition Units")
     cmdOptions.addOption("s", "strategy", true, "Pail Strategy")
     cmdOptions
   }
