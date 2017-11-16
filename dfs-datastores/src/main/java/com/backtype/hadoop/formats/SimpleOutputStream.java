@@ -19,13 +19,14 @@ public class SimpleOutputStream implements RecordOutputStream {
         return _raw;
     }
 
-    public void writeRaw(byte[] record) throws IOException {
-        writeRaw(record, 0, record.length);
+    public long writeRaw(byte[] record) throws IOException {
+        return writeRaw(record, 0, record.length);
     }
 
-    public void writeRaw(byte[] record, int start, int length) throws IOException {
+    public long writeRaw(byte[] record, int start, int length) throws IOException {
         _os.writeInt(length);
         _os.write(record, start, length);
+        return _os.size();
     }
 
     public void close() throws IOException {
