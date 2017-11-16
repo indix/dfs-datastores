@@ -74,7 +74,7 @@ public class SequenceFileFormat implements PailFormat {
         CompressionType type = TYPES.get(_typeArg);
         CompressionCodec codec = CODECS.get(_codecArg);
 
-        if(type==null)
+        if (type == null)
             return new SequenceFileOutputStream(fs, path);
         else
             return new SequenceFileOutputStream(fs, path, type, codec);
@@ -100,40 +100,40 @@ public class SequenceFileFormat implements PailFormat {
 
 
         public SequenceFilePailRecordReader(JobConf conf, PailInputSplit split, Reporter reporter) throws IOException {
-           this.split = split;
-           this.conf = conf;
-           this.recordsRead = 0;
-           this.reporter = reporter;
-           LOG.info("Processing pail file " + split.getPath().toString());
-            ifBlockCompressed();
-           resetDelegate();
+            this.split = split;
+            this.conf = conf;
+            this.recordsRead = 0;
+            this.reporter = reporter;
+            LOG.info("Processing pail file " + split.getPath().toString());
+            checkIfBlockCompressed();
+            resetDelegate();
         }
 
         private void resetDelegate() throws IOException {
             this.delegate = new SequenceFileRecordReader<BytesWritable, NullWritable>(conf, split);
-           BytesWritable dummyValue = new BytesWritable();
-           for(int i=0; i<recordsRead; i++) {
-               long posBeforeNext = delegate.getPos();
-               delegate.next(dummyValue, NullWritable.get());
-               long posAfterNext = delegate.getPos();
-               checkForOffsetDuringBlockCompression(posBeforeNext, posAfterNext);
-           }
+            BytesWritable dummyValue = new BytesWritable();
+            for (int i = 0; i < recordsRead; i++) {
+                long posBeforeNext = delegate.getPos();
+                delegate.next(dummyValue, NullWritable.get());
+                long posAfterNext = delegate.getPos();
+                checkForOffsetDuringBlockCompression(posBeforeNext, posAfterNext);
+            }
         }
 
-        private void ifBlockCompressed() throws IOException {
+        private void checkIfBlockCompressed() throws IOException {
             SequenceFile.Reader reader = new SequenceFile.Reader(split.getPath().getFileSystem(conf), split.getPath(), conf);
             this.isBlockCompressed = reader.isBlockCompressed();
             reader.close();
         }
 
         private void progress() {
-            if(reporter!=null) {
+            if (reporter != null) {
                 reporter.progress();
             }
         }
 
         private void checkForOffsetDuringBlockCompression(long posBeforeReading, long posAfterReading) {
-            if(isBlockCompressed) {
+            if (isBlockCompressed) {
                 if (posAfterReading != posBeforeReading) {
                     recordsRead = 0;
                     currentStartOffset = posBeforeReading;
@@ -156,7 +156,7 @@ public class SequenceFileFormat implements PailFormat {
              * The strategy is to retry a few times. If it fails every time then we're in case #2, and the best thing we can do
              * is continue on and accept the data loss. If we're in case #1, it'll just succeed.
              */
-            for(int i=0; i<NUM_TRIES; i++) {
+            for (int i = 0; i < NUM_TRIES; i++) {
                 try {
                     long posBeforeNext = delegate.getPos();
                     boolean ret = delegate.next(v, NullWritable.get());
@@ -168,13 +168,13 @@ public class SequenceFileFormat implements PailFormat {
                     k.setSplitStartOffset(currentStartOffset);
                     k.setRecordsToSkip(recordsRead);
                     return ret;
-                } catch(EOFException e) {
+                } catch (EOFException e) {
                     progress();
                     Utils.sleep(10000); //in case it takes time for S3 to recover
                     progress();
                     //this happens due to some sort of S3 corruption bug.
                     LOG.error("Hit an EOF exception while processing file " + split.getPath().toString() +
-                              " with records read = " + recordsRead);
+                            " with records read = " + recordsRead);
                     resetDelegate();
                 }
             }
@@ -212,10 +212,10 @@ public class SequenceFileFormat implements PailFormat {
         public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
             List<InputSplit> ret = new ArrayList<InputSplit>();
             Path[] roots = FileInputFormat.getInputPaths(job);
-            for(int i=0; i < roots.length; i++) {
+            for (int i = 0; i < roots.length; i++) {
                 _currPail = new Pail(roots[i].toString());
                 InputSplit[] splits = super.getSplits(job, numSplits);
-                for(InputSplit split: splits) {
+                for (InputSplit split : splits) {
                     ret.add(new PailInputSplit(_currPail.getFileSystem(), _currPail.getInstanceRoot(), _currPail.getSpec(), job, (FileSplit) split));
                 }
             }
@@ -227,7 +227,7 @@ public class SequenceFileFormat implements PailFormat {
             List<Path> paths = PailFormatFactory.getPailPaths(_currPail, job);
             FileSystem fs = _currPail.getFileSystem();
             FileStatus[] ret = new FileStatus[paths.size()];
-            for(int i=0; i<paths.size(); i++) {
+            for (int i = 0; i < paths.size(); i++) {
                 ret[i] = fs.getFileStatus(paths.get(i).makeQualified(fs));
             }
             return ret;
