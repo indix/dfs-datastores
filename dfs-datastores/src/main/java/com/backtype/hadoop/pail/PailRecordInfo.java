@@ -11,16 +11,16 @@ public class PailRecordInfo implements Writable {
     private String fullPath;
     private String pailRelativePath;
     private long splitStartOffset;
-    private int recordsToSkip;
+    private int recordNumber;
 
     public PailRecordInfo() {
     }
 
-    public PailRecordInfo(String fullPath, String pailRelativePath, long splitStartOffset, int recordsToSkip) {
+    public PailRecordInfo(String fullPath, String pailRelativePath, long splitStartOffset, int recordNumber) {
         this.fullPath = fullPath;
         this.pailRelativePath = pailRelativePath;
         this.splitStartOffset = splitStartOffset;
-        this.recordsToSkip = recordsToSkip;
+        this.recordNumber = recordNumber;
     }
 
     @Override
@@ -28,7 +28,7 @@ public class PailRecordInfo implements Writable {
         WritableUtils.writeString(out, fullPath);
         WritableUtils.writeString(out, pailRelativePath);
         WritableUtils.writeVLong(out, splitStartOffset);
-        WritableUtils.writeVInt(out, recordsToSkip);
+        WritableUtils.writeVInt(out, recordNumber);
     }
 
     @Override
@@ -36,7 +36,7 @@ public class PailRecordInfo implements Writable {
         fullPath = WritableUtils.readString(in);
         pailRelativePath = WritableUtils.readString(in);
         splitStartOffset = WritableUtils.readVLong(in);
-        recordsToSkip = WritableUtils.readVInt(in);
+        recordNumber = WritableUtils.readVInt(in);
     }
 
     public String getFullPath() {
@@ -51,8 +51,8 @@ public class PailRecordInfo implements Writable {
         return splitStartOffset;
     }
 
-    public int getRecordsToSkip() {
-        return recordsToSkip;
+    public int getRecordNumber() {
+        return recordNumber;
     }
 
     public void setFullPath(String fullPath) {
@@ -67,7 +67,7 @@ public class PailRecordInfo implements Writable {
         this.splitStartOffset = splitStartOffset;
     }
 
-    public void setRecordsToSkip(int recordsToSkip) {
-        this.recordsToSkip = recordsToSkip;
+    public void setRecordNumber(int recordNumber) {
+        this.recordNumber = recordNumber;
     }
 }

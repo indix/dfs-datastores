@@ -119,7 +119,7 @@ public abstract class PailFormatTester extends TestCase {
     private void assertDataFromRecordInfo(PailRecordInfo recordInfo, String expected) throws IOException {
         SequenceFile.Reader reader = new SequenceFile.Reader(local.getConf(), file(new Path(recordInfo.getFullPath())), start(recordInfo.getSplitStartOffset()));
         BytesWritable value = new BytesWritable();
-        for (int i = 0; i < recordInfo.getRecordsToSkip(); i++) reader.next(value);
+        for (int i = 0; i < recordInfo.getRecordNumber(); i++) reader.next(value);
         String actual = new String(value.getBytes());
         assertTrue(actual.equals(expected));
         reader.close();

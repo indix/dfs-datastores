@@ -64,7 +64,7 @@ public class PailTap extends Hfs {
     private PailTapOptions _options;
 
     public PailScheme(PailTapOptions options) {
-      super(new Fields("pail_root", options.fieldName, "full_path", "split_start", "records_to_skip"), Fields.ALL);
+      super(new Fields("pail_root", options.fieldName, "full_path", "split_start", "record_number"), Fields.ALL);
       _options = options;
     }
 
@@ -148,7 +148,7 @@ public class PailTap extends Hfs {
       if (!result) { return false; }
       PailRecordInfo recordInfo = ((PailRecordInfo) k);
       Object value = deserialize((BytesWritable) v);
-      sourceCall.getIncomingEntry().setTuple(new Tuple(recordInfo.getPailRelativePath(), value, recordInfo.getFullPath(), recordInfo.getSplitStartOffset(), recordInfo.getRecordsToSkip()));
+      sourceCall.getIncomingEntry().setTuple(new Tuple(recordInfo.getPailRelativePath(), value, recordInfo.getFullPath(), recordInfo.getSplitStartOffset(), recordInfo.getRecordNumber()));
       return true;
     }
 

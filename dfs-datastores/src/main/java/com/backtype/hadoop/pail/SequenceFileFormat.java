@@ -166,7 +166,7 @@ public class SequenceFileFormat implements PailFormat {
                     k.setFullPath(split.getPath().toString());
                     k.setPailRelativePath(split.getPailRelPath());
                     k.setSplitStartOffset(currentStartOffset);
-                    k.setRecordsToSkip(recordsRead);
+                    k.setRecordNumber(recordsRead);
                     return ret;
                 } catch (EOFException e) {
                     progress();
