@@ -146,8 +146,15 @@ object IxPailArchiver extends ArgsParser {
 
     val lastWeekBucket = DateHelper.weekInterval(new DateTime(System.currentTimeMillis()).minusDays(14))
     implicit val cli = new PosixParser().parse(options, args)
-    val baseInputDir = cmdArgs("base-input-dir")
+    val baseInputDirs = cmdArgs("base-input-dir")
 
+    baseInputDirs.split(",").map{
+      baseDir => migrateToQuarter(args, lastWeekBucket, baseDir.trim())
+    }
+
+  }
+
+  private def migrateToQuarter(args: Array[String], lastWeekBucket: String, baseInputDir: String) = {
     val inputDirPath: Path = new Path(baseInputDir, lastWeekBucket)
     val configuration = new Configuration()
     val fs = inputDirPath.getFileSystem(configuration)
@@ -159,7 +166,6 @@ object IxPailArchiver extends ArgsParser {
     } else {
       logger.info("The following location doesn't exist:" + inputDirPath)
     }
-
   }
 
   override val options: Options = {
