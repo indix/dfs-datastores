@@ -144,12 +144,17 @@ object IxPailArchiver extends ArgsParser {
 
   def main(args: Array[String]) {
 
-    val lastWeekBucket = DateHelper.weekInterval(new DateTime(System.currentTimeMillis()).minusDays(14))
     implicit val cli = new PosixParser().parse(options, args)
+    val numWeeksToArchive = cmdOptionalArgs("num-weeks").getOrElse("1").toInt
+    val daysBefore = cmdOptionalArgs("days-before").getOrElse("14").toInt
     val baseInputDirs = cmdArgs("base-input-dir")
 
-    baseInputDirs.split(",").map{
-      baseDir => migrateToQuarter(args, lastWeekBucket, baseDir.trim())
+    val bucketsToMove = 0 until numWeeksToArchive map {
+      num => DateHelper.weekInterval(new DateTime(System.currentTimeMillis()).minusDays(daysBefore + (7 * num)))
+    }
+
+    baseInputDirs.split(",").foreach{
+      baseDir => bucketsToMove.foreach(bucket => migrateToQuarter(args, bucket, baseDir.trim()))
     }
 
   }
@@ -160,11 +165,13 @@ object IxPailArchiver extends ArgsParser {
     val fs = inputDirPath.getFileSystem(configuration)
 
     if (fs.exists(inputDirPath)) {
-      val loc = args.indexOf("--base-input-dir")
-      val finalParams = args.slice(0, loc) ++ args.slice(loc + 2, args.length) ++ Array("--input-dir", inputDirPath.toString)
+      val newArgs = args.filterNot{arg => Array("num-weeks", "days-before").contains(arg)}
+      val loc = newArgs.indexOf("--base-input-dir")
+      val finalParams: Array[String] = newArgs.slice(0, loc) ++ newArgs.slice(loc + 2, newArgs.length) ++ Array("--input-dir", inputDirPath.toString)
+      logger.info(finalParams.mkString(" "))
       ToolRunner.run(configuration, new PailMigrate, finalParams)
     } else {
-      logger.info("The following location doesn't exist:" + inputDirPath)
+      logger.info("The following location doesn't exist:" + inputDirPath.getName)
     }
   }
 
@@ -175,6 +182,8 @@ object IxPailArchiver extends ArgsParser {
     cmdOptions.addOption("t", "target-pail-spec", true, "Target Pail Spec")
     cmdOptions.addOption("r", "record-type", true, "Record Type")
     cmdOptions.addOption("k", "keep-source", true, "Keep Source")
+    cmdOptions.addOption("n", "num-weeks", true, "Number of weeks before the last day to be archived. Default value is 1")
+    cmdOptions.addOption("d", "days-before", true, "Minimum days data to be kept in weekly structure")
     cmdOptions
   }
 }
