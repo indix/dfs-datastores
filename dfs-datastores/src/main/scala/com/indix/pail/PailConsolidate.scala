@@ -2,7 +2,7 @@ package com.indix.pail
 
 import com.backtype.hadoop.pail.Pail
 import com.indix.commons.FSUtils
-import org.apache.commons.cli.{Options, PosixParser}
+import com.twitter.scalding.Args
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.joda.time.DateTime
@@ -55,16 +55,16 @@ object PailConsolidate {
   }
 }
 
-object IxPailConsolidator extends FSUtils with ArgsParser {
+object IxPailConsolidator extends FSUtils {
   def conf: Configuration = new Configuration()
 
   def main(args: Array[String]) = {
-    implicit val cli = new PosixParser().parse(options, args)
+    val cmdArgs = Args(args)
     val pailRoot = cmdArgs("input-dir")
     val pipelineFromEnv = Option(System.getenv("GO_PIPELINE_LABEL")).filter(_.nonEmpty).getOrElse("MANUAL")
-    val pipelineLabel = cmdOptionalArgs("pipeline").getOrElse(pipelineFromEnv)
-    val numTimePartitionUnitsToCover = cmdOptionalArgs("num-partition-units").getOrElse("2").toInt
-    val strategy = cmdOptionalArgs("strategy").getOrElse("all")
+    val pipelineLabel = cmdArgs.optional("pipeline").getOrElse(pipelineFromEnv)
+    val numTimePartitionUnitsToCover = cmdArgs.optional("num-partition-units").getOrElse("2").toInt
+    val strategy = cmdArgs.optional("strategy").getOrElse("all")
     val thisMoment = DateTime.now()
 
     def getSubDirToProcess(strategy: String, thisMoment: DateTime, i: Int) = strategy match {
@@ -82,15 +82,5 @@ object IxPailConsolidator extends FSUtils with ArgsParser {
 
     dirsToConsolidate.foreach { subDirToProcess => new PailConsolidate(pailRoot, subDirToProcess, pipelineLabel).run() }
   }
-
-  override val options = {
-    val cmdOptions = new Options()
-    cmdOptions.addOption("i", "input-dir", true, "Input Directory")
-    cmdOptions.addOption("p", "pipeline", true, "Pipeline")
-    cmdOptions.addOption("n", "num-partition-units", true, "Number of Partition Units")
-    cmdOptions.addOption("s", "strategy", true, "Pail Strategy")
-    cmdOptions
-  }
-
 
 }

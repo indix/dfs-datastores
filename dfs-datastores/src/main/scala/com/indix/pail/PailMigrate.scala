@@ -7,7 +7,7 @@ import com.backtype.hadoop.pail.SequenceFileFormat.SequenceFilePailInputFormat
 import com.backtype.hadoop.pail._
 import com.backtype.support.Utils
 import com.indix.pail.PailMigrate._
-import org.apache.commons.cli.{Options, PosixParser}
+import com.twitter.scalding.Args
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{BytesWritable, Text}
@@ -16,7 +16,7 @@ import org.apache.hadoop.util.{Tool, ToolRunner}
 import org.apache.log4j.Logger
 import org.joda.time.DateTime
 
-class PailMigrate extends Tool with ArgsParser {
+class PailMigrate extends Tool {
   val logger = Logger.getLogger(this.getClass)
   var configuration: Configuration = null
 
@@ -33,7 +33,7 @@ class PailMigrate extends Tool with ArgsParser {
 
   override def run(args: Array[String]): Int = {
 
-    implicit val cli = new PosixParser().parse(options, args)
+    val cmdArgs = Args(args)
 
     val inputDir = cmdArgs("input-dir")
 
@@ -100,16 +100,6 @@ class PailMigrate extends Tool with ArgsParser {
   override def getConf: Configuration = configuration
 
   override def setConf(configuration: Configuration): Unit = this.configuration = configuration
-
-  override val options = {
-    val cmdOptions = new Options()
-    cmdOptions.addOption("i", "input-dir", true, "Input Directory")
-    cmdOptions.addOption("o", "output-dir", true, "Output Directory")
-    cmdOptions.addOption("t", "target-pail-spec", true, "Target Pail Spec")
-    cmdOptions.addOption("r", "record-type", true, "Record Type")
-    cmdOptions.addOption("k", "keep-source", true, "Keep Source")
-    cmdOptions
-  }
 }
 
 object PailMigrate {
@@ -139,14 +129,13 @@ object PailMigrateUtil {
   }
 }
 
-object IxPailArchiver extends ArgsParser {
+object IxPailArchiver {
   val logger = Logger.getLogger(this.getClass)
 
   def main(args: Array[String]) {
-
-    implicit val cli = new PosixParser().parse(options, args)
-    val numWeeksToArchive = cmdOptionalArgs("num-weeks").getOrElse("1").toInt
-    val daysBefore = cmdOptionalArgs("days-before").getOrElse("14").toInt
+    val cmdArgs = Args(args)
+    val numWeeksToArchive = cmdArgs.optional("num-weeks").getOrElse("1").toInt
+    val daysBefore = cmdArgs.optional("days-before").getOrElse("14").toInt
     val baseInputDirs = cmdArgs("base-input-dir")
 
     val bucketsToMove = 0 until numWeeksToArchive map {
@@ -173,18 +162,6 @@ object IxPailArchiver extends ArgsParser {
     } else {
       logger.info("The following location doesn't exist:" + inputDirPath.getName)
     }
-  }
-
-  override val options: Options = {
-    val cmdOptions = new Options()
-    cmdOptions.addOption("i", "base-input-dir", true, "Input Directory")
-    cmdOptions.addOption("o", "output-dir", true, "Output Directory")
-    cmdOptions.addOption("t", "target-pail-spec", true, "Target Pail Spec")
-    cmdOptions.addOption("r", "record-type", true, "Record Type")
-    cmdOptions.addOption("k", "keep-source", true, "Keep Source")
-    cmdOptions.addOption("n", "num-weeks", true, "Number of weeks before the last day to be archived. Default value is 1")
-    cmdOptions.addOption("d", "days-before", true, "Minimum days data to be kept in weekly structure")
-    cmdOptions
   }
 }
 
