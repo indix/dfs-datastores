@@ -660,7 +660,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
             full.remove(0);
         }
         // remove the attempt_(\d+) folder
-        while(full.size() > 0 && full.get(0).matches("attempt_(\\d+)")) {
+        while(full.size() > 0 && full.get(0).matches("attempt_(\\d+).*")) {
             full.remove(0);
         }
         if(!getSpec().getStructure().isValidTarget(full.toArray(new String[full.size()]))) {
