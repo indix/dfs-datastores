@@ -650,6 +650,19 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
         while(full.size()>0 && full.get(0).startsWith("_")) {
             full.remove(0);
         }
+        //hack to get around how hadoop2 does outputs --> _temporary and attempt_(\d+)
+        if(full.contains("_temporary")) {
+            // remove everything before the _temporary, it can be the attempt number of the task
+            while(full.size() > 0 && !full.get(0).equals("_temporary")) {
+                full.remove(0);
+            }
+            // remove the actual _temporary path
+            full.remove(0);
+        }
+        // remove the attempt_(\d+) folder
+        while(full.size() > 0 && full.get(0).matches("attempt_(\\d+)")) {
+            full.remove(0);
+        }
         if(!getSpec().getStructure().isValidTarget(full.toArray(new String[full.size()]))) {
             throw new IllegalArgumentException(
                     userfilename + " is not valid with the pail structure " + getSpec().toString() +
