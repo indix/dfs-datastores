@@ -63,7 +63,7 @@ class PailMigrate extends Tool {
     }
 
     jobConf.setInputFormat(classOf[SequenceFilePailInputFormat])
-    val filesAvailableAsOfNow = new Pail(inputDir).getStoredFiles
+    val filesAvailableAsOfNow = Pail.create(inputDir).getStoredFiles
     filesAvailableAsOfNow.asScala.foreach {inputFileInPail =>
       FileInputFormat.addInputPath(jobConf, inputFileInPail)
     }
