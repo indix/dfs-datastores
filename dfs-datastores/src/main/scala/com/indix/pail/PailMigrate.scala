@@ -16,8 +16,6 @@ import org.apache.hadoop.util.{Tool, ToolRunner}
 import org.apache.log4j.Logger
 import org.joda.time.DateTime
 
-import scala.collection.JavaConverters.{asScalaBufferConverter}
-
 class PailMigrate extends Tool {
   val logger = Logger.getLogger(this.getClass)
   var configuration: Configuration = null
@@ -63,10 +61,7 @@ class PailMigrate extends Tool {
     }
 
     jobConf.setInputFormat(classOf[SequenceFilePailInputFormat])
-    val filesAvailableAsOfNow = Pail.create(inputDir).getStoredFiles
-    filesAvailableAsOfNow.asScala.foreach {inputFileInPail =>
-      FileInputFormat.addInputPath(jobConf, inputFileInPail)
-    }
+    FileInputFormat.addInputPath(jobConf, new Path(inputDir))
 
     jobConf.setOutputFormat(classOf[PailOutputFormat])
     FileOutputFormat.setOutputPath(jobConf, new Path(outputDir))
@@ -90,14 +85,8 @@ class PailMigrate extends Tool {
     if (!job.isSuccessful) throw new IOException("Pail Migrate failed")
 
     if (!keepSourceFiles) {
-      logger.info(s"Deleting files under $inputDir")
-      val deleteStatus = filesAvailableAsOfNow.asScala.forall {pailFile =>
-        val status = fs.delete(path, true)
-        if(!status) {
-          logger.warn(s"Deleting of $pailFile failed.")
-        }
-        status
-      }
+      logger.info(s"Deleting path $inputDir")
+      val deleteStatus = fs.delete(path, true)
 
       if (!deleteStatus)
         logger.warn(s"Deleting $inputDir failed. \n *** Please delete the source manually ***")
