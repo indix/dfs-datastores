@@ -175,7 +175,7 @@ object IxPailArchiver {
       logger.info(finalParams.mkString(" "))
       ToolRunner.run(configuration, new PailMigrate, finalParams)
     } else {
-      logger.info("The following location doesn't exist:" + inputDirPath.getName)
+      logger.info("The following location doesn't exist:" + inputDirPath.toString)
     }
   }
 }
