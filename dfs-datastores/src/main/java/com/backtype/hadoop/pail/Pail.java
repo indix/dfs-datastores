@@ -11,6 +11,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.s3.S3FileSystem;
 import com.indix.hadoop.fs.s3native.LimitedListingS3NFileSystem;
+import org.apache.hadoop.fs.s3a.S3AFileSystem;
 import org.apache.hadoop.fs.s3native.NativeS3FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -612,7 +613,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
 
     @Override
     protected boolean isS3Root() {
-        return _fs instanceof NativeS3FileSystem || _fs instanceof S3FileSystem;
+        return _fs instanceof NativeS3FileSystem || _fs instanceof S3FileSystem || _fs instanceof S3AFileSystem;
     }
 
     @Override
