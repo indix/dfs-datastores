@@ -113,7 +113,8 @@ object Build extends Build {
       "joda-time" % "joda-time" % "2.8.2",
       "org.joda" % "joda-convert" % "1.7",
       "org.apache.commons" % "commons-lang3" % "3.1",
-      "com.twitter" %% "scalding-args" % "0.16.0"
+      "com.twitter" %% "scalding-args" % "0.16.0",
+      "org.apache.hadoop" % "hadoop-aws" % "2.6.0" % "provided" 
     ).map(_.exclude("commons-daemon", "commons-daemon"))
   )
 
