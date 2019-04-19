@@ -128,7 +128,8 @@ object Build extends Build {
       "cascading" % "cascading-core" % "2.5.5",
       "cascading" % "cascading-hadoop" % "2.5.5",
       "org.apache.hadoop" % "hadoop-client" % "2.0.0-mr1-cdh4.2.1" % "provided",
-      "org.apache.hadoop" % "hadoop-core" % "2.0.0-mr1-cdh4.2.1" % "test"
+      "org.apache.hadoop" % "hadoop-core" % "2.0.0-mr1-cdh4.2.1" % "test",
+      "org.apache.hadoop" % "hadoop-aws" % "2.6.0" % "provided" exclude("org.apache.hadoop", "hadoop-common")
     )
   ).dependsOn(core)
 
