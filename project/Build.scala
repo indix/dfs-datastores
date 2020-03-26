@@ -47,9 +47,9 @@ object Build extends Build {
 
     publishTo := {
       if(appVersion().endsWith("-SNAPSHOT"))
-        Some("Indix Snapshot Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-snapshot-local")
+        Some("Indix Snapshot Artifactory" at "http://artifacts.midgard.avalara.io:8081/artifactory/libs-snapshot-local")
       else
-        Some("Indix Release Artifactory" at "http://artifacts.indix.tv:8081/artifactory/libs-release-local")
+        Some("Indix Release Artifactory" at "http://artifacts.midgard.avalara.io:8081/artifactory/libs-release-local")
     },
 
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-q", "-v"),
