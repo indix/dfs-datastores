@@ -2,10 +2,10 @@ package com.indix.pail
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, FunSpec}
 
-class PailConsolidateTest extends FunSpec with FSUtils with ShouldMatchers with BeforeAndAfterEach  {
+class PailConsolidateTest extends FunSpec with FSUtils with Matchers with BeforeAndAfterEach  {
 
   def customConfig: Configuration = new Configuration()
   customConfig.set("fs.default.name", "file:///")
