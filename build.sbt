@@ -20,9 +20,10 @@ val sharedSettings = Seq(
 
   resolvers ++= Seq(
     "Clojars" at "https://repo.clojars.org/",
-    "Concurrent Maven Repo" at "http://conjars.org/repo",
+    "Concurrent Maven Repo" at "https://conjars.org/repo",
     "Twttr Maven Repo" at "https://maven.twttr.com/",
-    "Cloudera Repo" at "https://repository.cloudera.com/artifactory/cloudera-repos"
+    "Cloudera Repo" at "https://repository.cloudera.com/artifactory/cloudera-repos",
+    "Maven Central Server" at "https://repo1.maven.org/maven2"
   ),
 
   parallelExecution in Test := false,
