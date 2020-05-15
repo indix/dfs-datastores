@@ -32,7 +32,7 @@ val sharedSettings = Seq(
 
   scalaVersion := ScalaVersion,
 
-  sources in(Compile, doc) ~= (_ filter (_.getName endsWith ".scala")),
+  sources in(Compile, doc) := Seq.empty,
 
   // Publishing options:
   publishMavenStyle := true,
