@@ -135,7 +135,7 @@ object IxPailArchiver {
   def main(args: Array[String]) {
     val cmdArgs = Args(args)
     val numWeeksToArchive = cmdArgs.optional("num-weeks").getOrElse("1").toInt
-    val daysBefore = cmdArgs.optional("days-before").getOrElse("14").toInt
+    val daysBefore = cmdArgs.optional("days-before").getOrElse("35").toInt
     val baseInputDirs = cmdArgs("base-input-dir")
 
     val bucketsToMove = 0 until numWeeksToArchive map {
