@@ -51,8 +51,8 @@ public abstract class AbstractPail {
             }
         }
 
-        public void writeRaw(byte[] record) throws IOException {
-            writeRaw(record, 0, record.length);
+        public long writeRaw(byte[] record) throws IOException {
+            return writeRaw(record, 0, record.length);
         }
 
         private Function<Object,Boolean> tryRename()
@@ -84,8 +84,8 @@ public abstract class AbstractPail {
             // NOT DOING ANYTHING TO LEAVE IT AT STATUS-QUO
         }
 
-        public void writeRaw(byte[] record, int start, int length) throws IOException {
-            delegate.writeRaw(record, start, length);
+        public long writeRaw(byte[] record, int start, int length) throws IOException {
+            return delegate.writeRaw(record, start, length);
         }
     }
 
@@ -121,8 +121,8 @@ public abstract class AbstractPail {
             delegate = createOutputStream(finalFile);
         }
 
-        public void writeRaw(byte[] record) throws IOException {
-            writeRaw(record, 0, record.length);
+        public long writeRaw(byte[] record) throws IOException {
+            return writeRaw(record, 0, record.length);
         }
 
         public void close() throws IOException {
@@ -134,8 +134,8 @@ public abstract class AbstractPail {
             // NOT DOING ANYTHING TO LEAVE IT AT STATUS-QUO
         }
 
-        public void writeRaw(byte[] record, int start, int length) throws IOException {
-            delegate.writeRaw(record, start, length);
+        public long writeRaw(byte[] record, int start, int length) throws IOException {
+            return delegate.writeRaw(record, start, length);
         }
     }
 

@@ -36,7 +36,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
             _workers = new HashMap<String, RecordOutputStream>();
         }
 
-        public <T> void writeObject(T obj) throws IOException {
+        public <T> long writeObject(T obj) throws IOException {
             PailStructure<T> structure = ((PailStructure<T>) _structure);
             List<String> rootAttrs = structure.getTarget(obj);
             List<String> attrs = makeRelative(rootAttrs);
@@ -53,13 +53,7 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
                 _workers.put(targetDir, Pail.super.openWrite(p.toString(), _overwrite));
             }
             RecordOutputStream os = _workers.get(targetDir);
-            os.writeRaw(structure.serialize(obj));
-        }
-
-        public void writeObjects(T... objs) throws IOException {
-            for(T obj: objs) {
-                writeObject(obj);
-            }
+            return os.writeRaw(structure.serialize(obj));
         }
 
         public void close() throws IOException {
@@ -82,16 +76,16 @@ public class Pail<T> extends AbstractPail implements Iterable<T>{
             return Utils.stripRoot(getAttrs(), attrs);
         }
 
-        public void writeRaw(byte[] record) throws IOException {
-            writeRaw(record, 0, record.length);
+        public long writeRaw(byte[] record) throws IOException {
+            return writeRaw(record, 0, record.length);
         }
 
-        public void writeRaw(byte[] record, int start, int length) throws IOException {
+        public long writeRaw(byte[] record, int start, int length) throws IOException {
             if(!_workers.containsKey(_userfilename)) {
                 checkValidStructure(_userfilename);
                 _workers.put(_userfilename, Pail.super.openWrite(_userfilename, _overwrite));
             }
-            _workers.get(_userfilename).writeRaw(record, start, length);
+            return _workers.get(_userfilename).writeRaw(record, start, length);
         }
     }
 
